@@ -1,0 +1,44 @@
+<!doctype html>
+<!-- Set B (KLV-08, NFR-04): modal odağı içeri taşır, Tab içeride döner,
+     Escape kapatır; ama kapanınca odak tetikleyiciye dönmez (belgeye düşer). -->
+<html lang="tr">
+<head>
+  <meta charset="utf-8">
+  <title>Odak geri dönmüyor</title>
+  <style>
+    body { font-family: sans-serif; margin: 2rem; color: #222; background: #fff; }
+    #confirm { position: fixed; top: 20%; left: 30%; width: 40%; padding: 1.5rem;
+      background: #fff; border: 2px solid #333; }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Siparişler</h1>
+    <p><button id="cancel-order" type="button">Siparişi iptal et</button></p>
+    <div id="confirm" role="dialog" aria-modal="true" aria-labelledby="confirm-title" hidden>
+      <h2 id="confirm-title">Emin misiniz?</h2>
+      <button id="c-yes" type="button">Evet, iptal et</button>
+      <button id="c-no" type="button">Vazgeç</button>
+    </div>
+    <p><a id="help" href="#yardim">Yardım</a></p>
+  </main>
+  <script>
+    const dlg = document.getElementById('confirm');
+    const yes = document.getElementById('c-yes');
+    const no = document.getElementById('c-no');
+    const close = () => { dlg.hidden = true; };
+    document.getElementById('cancel-order').addEventListener('click', () => {
+      dlg.hidden = false;
+      yes.focus();
+    });
+    yes.addEventListener('click', close);
+    no.addEventListener('click', close);
+    dlg.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') { close(); return; }
+      if (e.key !== 'Tab') return;
+      if (!e.shiftKey && document.activeElement === no) { e.preventDefault(); yes.focus(); }
+      if (e.shiftKey && document.activeElement === yes) { e.preventDefault(); no.focus(); }
+    });
+  </script>
+</body>
+</html>

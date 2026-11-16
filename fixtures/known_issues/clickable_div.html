@@ -1,0 +1,53 @@
+<!doctype html>
+<!-- Set B (KLV-06, KLV-07, NFR-04).
+     KLV-06: #card-buy (onclick) ve #close-x (addEventListener + cursor:pointer)
+             fareyle çalışır ama Tab ile ulaşılamaz.
+     KLV-07: #fake-toggle yalnızca tıklamayla çalışır; #half-btn Enter ile
+             çalışır ama Boşluk ile çalışmaz.
+     Doğru örnekler: #decor (tıklanabilir görünür ama hiçbir şey yapmaz),
+     #good-btn (Enter ve Boşluk ile çalışır). -->
+<html lang="tr">
+<head>
+  <meta charset="utf-8">
+  <title>Tıklanabilir div</title>
+  <style>
+    body { font-family: sans-serif; margin: 2rem; color: #222; background: #fff; }
+    .fake-btn, [role="button"] { display: inline-block; padding: .4rem .8rem; margin: .3rem;
+      border: 1px solid #555; border-radius: 4px; cursor: pointer; background: #f4f4f4; }
+    #close-x { cursor: pointer; font-size: 1.5rem; padding: 0 .5rem; }
+    #decor { cursor: pointer; display: inline-block; padding: .4rem; }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Sepet</h1>
+    <p><a id="first" href="#urun">Ürün ayrıntıları</a></p>
+    <div id="card-buy" class="fake-btn" onclick="say('Satın alındı')">Satın al</div>
+    <p>Kampanya duyurusu <span id="close-x" aria-label="Duyuruyu kapat">×</span></p>
+    <div id="decor">Yıldızlı ürün</div>
+    <p>
+      <span id="fake-toggle" role="button" tabindex="0" aria-pressed="false">Bildirimler</span>
+      <span id="half-btn" role="button" tabindex="0">Sepeti yenile</span>
+      <span id="good-btn" role="button" tabindex="0">Kuponu uygula</span>
+    </p>
+    <p id="status" aria-live="polite"></p>
+  </main>
+  <script>
+    function say(text) { document.getElementById('status').textContent = text; }
+    document.getElementById('close-x').addEventListener('click', () => say('Duyuru kapatıldı'));
+    const toggle = document.getElementById('fake-toggle');
+    toggle.addEventListener('click', () => {
+      toggle.setAttribute('aria-pressed', toggle.getAttribute('aria-pressed') === 'true' ? 'false' : 'true');
+    });
+    const half = document.getElementById('half-btn');
+    half.addEventListener('click', () => say('Sepet yenilendi'));
+    half.addEventListener('keydown', (e) => { if (e.key === 'Enter') say('Sepet yenilendi (Enter)'); });
+    const good = document.getElementById('good-btn');
+    const apply = () => say('Kupon uygulandı ' + Date.now());
+    good.addEventListener('click', apply);
+    good.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); apply(); }
+    });
+  </script>
+</body>
+</html>

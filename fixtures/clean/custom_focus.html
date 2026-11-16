@@ -1,0 +1,53 @@
+<!doctype html>
+<!-- Set C (NFR-05): outline kaldırılmış ama yerine başka bir odak göstergesi
+     konmuş öğeler (box-shadow, arka plan, kenarlık) ve iki sütunlu düzen.
+     Yanlış alarm tuzakları: KLV-03 (outline:none) ve KLV-04 (kenar çubuğundan
+     ana sütunun tepesine dönüş, kart ızgarasında satır başına dönüş). -->
+<html lang="tr">
+<head>
+  <meta charset="utf-8">
+  <title>Özel odak stilleri</title>
+  <style>
+    body { font-family: sans-serif; margin: 0; color: #222; background: #fff; }
+    *:focus { outline: none; }
+    .layout { display: grid; grid-template-columns: 220px 1fr; gap: 2rem; padding: 1.5rem; }
+    aside a { display: block; padding: .4rem; color: #00449e; margin-bottom: .3rem; }
+    aside a:focus-visible { background: #00449e; color: #fff; }
+    .btn { padding: .5rem 1rem; border: 1px solid #333; background: #f4f4f4; color: #222; }
+    .btn:focus-visible { box-shadow: 0 0 0 3px #1a5fb4; }
+    input { border: 2px solid #767676; padding: .3rem; }
+    input:focus-visible { border: 3px solid #1a5fb4; background: #eef4ff; }
+    .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-top: 1rem; }
+    .card { border: 1px solid #999; padding: 1rem; }
+    .card a { color: #00449e; }
+    .card a:focus-visible { text-decoration: none; background: #ffd400; color: #000; }
+  </style>
+</head>
+<body>
+  <div class="layout">
+    <aside>
+      <nav aria-label="Bölümler">
+        <a id="s1" href="#genel">Genel</a>
+        <a id="s2" href="#guvenlik">Güvenlik</a>
+        <a id="s3" href="#bildirim">Bildirimler</a>
+        <a id="s4" href="#fatura">Fatura</a>
+      </nav>
+    </aside>
+    <main>
+      <h1>Genel ayarlar</h1>
+      <label for="display-name">Görünen ad</label>
+      <input id="display-name" type="text">
+      <button id="apply" class="btn" type="button">Uygula</button>
+      <h2>Önerilen eklentiler</h2>
+      <div class="grid">
+        <div class="card"><a id="c1" href="#takvim">Takvim</a></div>
+        <div class="card"><a id="c2" href="#notlar">Notlar</a></div>
+        <div class="card"><a id="c3" href="#gorevler">Görevler</a></div>
+        <div class="card"><a id="c4" href="#dosyalar">Dosyalar</a></div>
+        <div class="card"><a id="c5" href="#sohbet">Sohbet</a></div>
+        <div class="card"><a id="c6" href="#anket">Anket</a></div>
+      </div>
+    </main>
+  </div>
+</body>
+</html>

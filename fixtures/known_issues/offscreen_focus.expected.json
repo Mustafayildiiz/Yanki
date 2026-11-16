@@ -1,0 +1,10 @@
+{
+  "page": "offscreen_focus.html",
+  "description": "Ekran dışındaki menü bağlantıları (#m1, #m2) ve 1×1 piksele kırpılmış bağlantı (#tiny) odaklanınca görünmez.",
+  "expected": [
+    {"type": "keyboard", "rule": "KLV-03", "check": "focus_not_visible", "selector": "#m1", "severity": "important", "needs_review": false},
+    {"type": "keyboard", "rule": "KLV-03", "check": "focus_not_visible", "selector": "#m2", "severity": "important", "needs_review": false},
+    {"type": "keyboard", "rule": "KLV-03", "check": "focus_not_visible", "selector": "#tiny", "severity": "important", "needs_review": false}
+  ],
+  "allowed_review": []
+}

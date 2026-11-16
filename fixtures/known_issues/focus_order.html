@@ -1,0 +1,45 @@
+<!doctype html>
+<!-- Set B (KLV-04, KLV-09, NFR-04).
+     KLV-04: #footer-contact tabindex="1" taşır; odak sayfanın altından başlar ve
+             başlığa geri sıçrar (bulgu, sıçramanın vardığı #nav-home'da).
+             #toolbar flex-direction: row-reverse ile ters gösterilir; odak sağdan
+             sola ilerler (#tb-edit ve #tb-delete).
+     KLV-09: main öncesinde 6 durak var ama atla bağlantısı yok (elle incele).
+     axe-core'un tabindex kuralı best-practice etiketlidir; varsayılan
+     WCAG A/AA taramasında çalışmaz. -->
+<html lang="tr">
+<head>
+  <meta charset="utf-8">
+  <title>Odak sırası</title>
+  <style>
+    body { font-family: sans-serif; margin: 2rem; color: #222; background: #fff; }
+    nav a { margin-right: 1rem; }
+    #toolbar { display: flex; flex-direction: row-reverse; justify-content: flex-end; gap: 1rem;
+               margin: 1rem 0; }
+    footer { margin-top: 20rem; }
+  </style>
+</head>
+<body>
+  <header>
+    <nav aria-label="Ana menü">
+      <a id="nav-home" href="#anasayfa">Ana sayfa</a>
+      <a id="nav-news" href="#haberler">Haberler</a>
+      <a id="nav-events" href="#etkinlikler">Etkinlikler</a>
+      <a id="nav-people" href="#kadro">Kadro</a>
+      <a id="nav-about" href="#hakkinda">Hakkında</a>
+    </nav>
+  </header>
+  <main>
+    <h1>Belge düzenleyici</h1>
+    <div id="toolbar" role="group" aria-label="Belge işlemleri">
+      <button id="tb-save" type="button">Kaydet</button>
+      <button id="tb-edit" type="button">Düzenle</button>
+      <button id="tb-delete" type="button">Sil</button>
+    </div>
+    <p><a id="history" href="#surumler">Sürüm geçmişi</a></p>
+  </main>
+  <footer>
+    <a id="footer-contact" href="#iletisim" tabindex="1">İletişim</a>
+  </footer>
+</body>
+</html>

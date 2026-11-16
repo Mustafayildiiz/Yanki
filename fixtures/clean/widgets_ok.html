@@ -1,0 +1,97 @@
+<!doctype html>
+<!-- Set C (NFR-05): klavyeyle doğru çalışan özel bileşenler.
+     Yanlış alarm tuzakları:
+     - #like: role=button, Enter ve Boşluk işleyicili (KLV-07).
+     - #wifi: role=switch, Boşluk ile çalışır (APG; Enter gerekmez).
+     - #app içindeki eylemler: olaylar React gibi belge kökünde dinlenir;
+       öğenin kendisinde dinleyici yoktur (KLV-06/07).
+     - .card: tıklanabilir kart ama içindeki bağlantıyla klavyeden erişilir (KLV-06).
+     - #menu-btn: açılır menü (disclosure), modal değildir (KLV-08). -->
+<html lang="tr">
+<head>
+  <meta charset="utf-8">
+  <title>Doğru bileşenler</title>
+  <style>
+    body { font-family: sans-serif; margin: 2rem; color: #222; background: #fff; }
+    [role="button"], [role="switch"] { display: inline-block; padding: .4rem .8rem; margin: .3rem;
+      border: 1px solid #555; border-radius: 4px; cursor: pointer; background: #f4f4f4; }
+    .card { border: 1px solid #999; padding: 1rem; margin: 1rem 0; cursor: pointer; }
+    .card a { color: #00449e; }
+    #menu { margin: .5rem 0; }
+  </style>
+</head>
+<body>
+  <header>
+    <nav aria-label="Ana menü">
+      <button id="menu-btn" type="button" aria-expanded="false" aria-controls="menu">Menü</button>
+      <ul id="menu" hidden>
+        <li><a id="m-profile" href="#profil">Profil</a></li>
+        <li><a id="m-logout" href="#cikis">Çıkış</a></li>
+      </ul>
+    </nav>
+  </header>
+  <main>
+    <h1>Panel</h1>
+    <p>
+      <span id="like" role="button" tabindex="0" aria-pressed="false">Beğen</span>
+      <span id="wifi" role="switch" tabindex="0" aria-checked="false">Kablosuz ağ</span>
+    </p>
+    <div id="app">
+      <span id="act-archive" role="button" tabindex="0" data-action="archive">Arşivle</span>
+      <span id="act-star" role="button" tabindex="0" data-action="star">Yıldızla</span>
+    </div>
+    <div class="card" id="card-report">
+      <h2>Aylık rapor</h2>
+      <a id="report-link" href="#rapor">Raporu aç</a>
+    </div>
+    <details>
+      <summary id="details-sum">Ayrıntılar</summary>
+      <p>Rapor her ayın ilk günü hazırlanır.</p>
+    </details>
+    <p id="status" aria-live="polite"></p>
+  </main>
+  <script>
+    const say = (t) => { document.getElementById('status').textContent = t; };
+
+    const menuBtn = document.getElementById('menu-btn');
+    const menu = document.getElementById('menu');
+    menuBtn.addEventListener('click', () => {
+      const open = menuBtn.getAttribute('aria-expanded') === 'true';
+      menuBtn.setAttribute('aria-expanded', String(!open));
+      menu.hidden = open;
+    });
+
+    const like = document.getElementById('like');
+    const toggleLike = () => like.setAttribute('aria-pressed',
+      like.getAttribute('aria-pressed') === 'true' ? 'false' : 'true');
+    like.addEventListener('click', toggleLike);
+    like.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleLike(); }
+    });
+
+    const wifi = document.getElementById('wifi');
+    const toggleWifi = () => wifi.setAttribute('aria-checked',
+      wifi.getAttribute('aria-checked') === 'true' ? 'false' : 'true');
+    wifi.addEventListener('click', toggleWifi);
+    wifi.addEventListener('keydown', (e) => {
+      if (e.key === ' ') { e.preventDefault(); toggleWifi(); }
+    });
+
+    // Belge kökünde olay devri (React benzeri).
+    const run = (el) => say(el.dataset.action + ' ' + Date.now());
+    document.addEventListener('click', (e) => {
+      const el = e.target.closest('[data-action]');
+      if (el) run(el);
+    });
+    document.addEventListener('keydown', (e) => {
+      const el = e.target.closest && e.target.closest('[data-action]');
+      if (el && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); run(el); }
+    });
+
+    document.getElementById('card-report').addEventListener('click', (e) => {
+      if (e.target.closest('a')) return;
+      location.hash = 'rapor';
+    });
+  </script>
+</body>
+</html>

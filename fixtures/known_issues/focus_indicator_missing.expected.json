@@ -1,0 +1,10 @@
+{
+  "page": "focus_indicator_missing.html",
+  "description": "outline:none ile odak göstergesi kaldırılmış bağlantı, metin alanı ve düğme. #help ve #send doğru örneklerdir; bulgu üretmemelidir.",
+  "expected": [
+    {"type": "keyboard", "rule": "KLV-03", "check": "focus_not_visible", "selector": "#nav-home", "severity": "important", "needs_review": false},
+    {"type": "keyboard", "rule": "KLV-03", "check": "focus_not_visible", "selector": "#search", "severity": "important", "needs_review": false},
+    {"type": "keyboard", "rule": "KLV-03", "check": "focus_not_visible", "selector": "#save", "severity": "important", "needs_review": false}
+  ],
+  "allowed_review": []
+}

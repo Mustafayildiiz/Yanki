@@ -1,0 +1,73 @@
+<!doctype html>
+<!-- Set C (NFR-05): APG diyalog desenine uyan iki modal.
+     #native-dlg: <dialog>.showModal() (tarayıcı odağı içeri taşır, arka planı
+     inert yapar, Escape ile kapatır, odağı geri verir).
+     #aria-dlg: role="dialog" aria-modal="true"; odak yönetimi JavaScript ile.
+     Yanlış alarm tuzağı: showModal içinde Tab'ın belge dışı bir adım
+     üzerinden dönmesi (KLV-08 "Tab dışarı kaçıyor" sayılmamalı). -->
+<html lang="tr">
+<head>
+  <meta charset="utf-8">
+  <title>Doğru modallar</title>
+  <style>
+    body { font-family: sans-serif; margin: 2rem; color: #222; background: #fff; }
+    #aria-dlg { position: fixed; top: 20%; left: 30%; width: 40%; padding: 1.5rem;
+      background: #fff; border: 2px solid #333; }
+    #backdrop { position: fixed; inset: 0; background: rgba(0, 0, 0, .4); }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Hesap</h1>
+    <p><button id="open-native" type="button">Şifreyi değiştir</button></p>
+    <p><button id="open-aria" type="button" aria-haspopup="dialog" aria-controls="aria-dlg">Oturumu kapat</button></p>
+    <p><a id="more" href="#ayrinti">Hesap ayrıntıları</a></p>
+  </main>
+
+  <dialog id="native-dlg" aria-labelledby="native-title">
+    <h2 id="native-title">Şifre değiştir</h2>
+    <label for="pw">Yeni şifre</label>
+    <input id="pw" type="password">
+    <button id="native-close" type="button">Kapat</button>
+  </dialog>
+
+  <div id="backdrop" hidden></div>
+  <div id="aria-dlg" role="dialog" aria-modal="true" aria-labelledby="aria-title" hidden>
+    <h2 id="aria-title">Oturum kapatılsın mı?</h2>
+    <button id="aria-yes" type="button">Evet</button>
+    <button id="aria-no" type="button">Hayır</button>
+  </div>
+
+  <script>
+    const native = document.getElementById('native-dlg');
+    document.getElementById('open-native').addEventListener('click', () => native.showModal());
+    document.getElementById('native-close').addEventListener('click', () => native.close());
+
+    const dlg = document.getElementById('aria-dlg');
+    const backdrop = document.getElementById('backdrop');
+    const yes = document.getElementById('aria-yes');
+    const no = document.getElementById('aria-no');
+    let opener = null;
+    const open = (e) => {
+      opener = e.currentTarget;
+      backdrop.hidden = false;
+      dlg.hidden = false;
+      yes.focus();
+    };
+    const close = () => {
+      dlg.hidden = true;
+      backdrop.hidden = true;
+      if (opener) opener.focus();
+    };
+    document.getElementById('open-aria').addEventListener('click', open);
+    yes.addEventListener('click', close);
+    no.addEventListener('click', close);
+    dlg.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') { e.preventDefault(); close(); return; }
+      if (e.key !== 'Tab') return;
+      if (!e.shiftKey && document.activeElement === no) { e.preventDefault(); yes.focus(); }
+      if (e.shiftKey && document.activeElement === yes) { e.preventDefault(); no.focus(); }
+    });
+  </script>
+</body>
+</html>

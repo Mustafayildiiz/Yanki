@@ -45,6 +45,58 @@ axe-core değiştirilmeden, özgün lisans başlığıyla dağıtılır. MPL-2.0
 | typing-extensions | 4.16.0 | PSF-2.0 |  |
 | typing-inspection | 0.4.5 | MIT |  |
 
+## Python paketleri, ML ekstrası (`requirements-ml.lock`, yalnızca Linux)
+
+Docker imajı `requirements-ml.lock` dosyasını kurar. Bu kilit yukarıdaki paketlere ek olarak alt metin modelleri (Faz 2) için aşağıdakileri içerir. `torch`, CPU indeksinden (`download.pytorch.org/whl/cpu`) gelir; CUDA paketleri kurulmaz. Ham metadata'daki belirsiz lisans adları SPDX'e çevrilip elle doğrulandı.
+
+| Paket | Sürüm | Lisans | Not |
+| --- | --- | --- | --- |
+| anyio | 4.16.0 | MIT | huggingface-hub bağımlılığı |
+| click | 8.5.1 | BSD-3-Clause | |
+| filelock | 4.2.10 | MIT | |
+| fsspec | 2026.9.0 | BSD-3-Clause | |
+| h11 | 0.16.0 | MIT | |
+| hf-xet | 1.8.0 | Apache-2.0 | Model indirme |
+| httpcore2 | 2.16.2 | BSD-3-Clause | |
+| httpx2 | 2.16.2 | BSD-3-Clause | |
+| huggingface-hub | 2.4.0 | Apache-2.0 | Model indirme; yalnızca `yanki models download` ağa çıkar |
+| idna | 3.20 | BSD-3-Clause | |
+| jinja2 | 3.1.6 | BSD-3-Clause | torch bağımlılığı |
+| markupsafe | 3.0.4 | BSD-3-Clause | |
+| mpmath | 1.3.0 | BSD-3-Clause | |
+| networkx | 3.6.1 / 3.7 | BSD-3-Clause | Python sürümüne göre |
+| numpy | 2.4.6 / 2.5.5 | BSD-3-Clause AND 0BSD AND MIT AND Zlib AND CC0-1.0 | Python sürümüne göre |
+| pillow | 13.0.0 | MIT-CMU | Görsel çözme ve küçük resim |
+| pyyaml | 6.0.3 | MIT | |
+| regex | 2026.11.15 | Apache-2.0 AND CNRI-Python | |
+| safetensors | 0.8.0 | Apache-2.0 | |
+| sentencepiece | 0.2.3 | Apache-2.0 | MarianMT ve E5 belirteçleyicisi |
+| setuptools | 84.2.1 | MIT | |
+| sympy | 1.14.0 | BSD-3-Clause | |
+| tokenizers | 0.23.3 | Apache-2.0 | |
+| torch | 2.15.0+cpu | Apache-2.0 AND Apache-2.0 WITH LLVM-exception AND BSD-2-Clause AND BSD-3-Clause AND BSL-1.0 AND ISC AND MIT AND Zlib | Metadata `License-Expression` |
+| tqdm | 4.70.1 | MPL-2.0 AND MIT | |
+| transformers | 5.23.0 | Apache-2.0 | |
+| truststore | 0.10.5 | MIT | |
+
+## Model ağırlıkları (dağıtılmaz; `yanki models download` ile indirilir)
+
+Ağırlıklar imaja ve depoya girmez; `HF_HOME` (`/models` volume'ü) altına indirilir. Her model sabit bir revizyonla (commit SHA) yüklenir; revizyon `yanki/config.py` içindedir ve rapora yazılır (NFR-06). Lisanslar 2026-11-16'da model kartlarından ve kaynak depolardan doğrulandı.
+
+| Model | Revizyon | Lisans | Kullanım ve kart notları |
+| --- | --- | --- | --- |
+| `Salesforce/blip-image-captioning-base` | `82a3776` | BSD-3-Clause | Varsayılan görsel açıklama (ALT-05). Kart: "This release is for research purposes only in support of an academic paper." Kaynak depo (salesforce/BLIP) Mart 2026'da arşivlendi. |
+| `Helsinki-NLP/opus-mt-tr-en` | `19c6542` | Apache-2.0 | Varsayılan çeviri (ALT-04). |
+| `Helsinki-NLP/opus-mt-tc-big-tr-en` | `2261c8f` | CC-BY-4.0 | Aday çeviri modeli (SRS §8.3), varsayılan değil. Kullanılırsa atıf zorunlu: Tiedemann & Thottingal (2020), "OPUS-MT — Building open translation services for the World"; kart "Please, cite if you use this model" der. |
+| `intfloat/multilingual-e5-small` | `614241f` | MIT | Varsayılan anlamsal benzerlik (ALT-04, ana sinyal). |
+| `intfloat/multilingual-e5-base` | `d128750` | MIT | Aday (SRS §8.3), varsayılan değil. |
+| `openai/clip-vit-base-patch32` | `3d74acf` | MIT (openai/CLIP deposu, "Copyright (c) 2021 OpenAI") | Görsel–metin benzerliği (ALT-04, ek sinyal). HF kartında lisans alanı yok. Model kartı: "Any deployed use case of the model - whether commercial or not - is currently out of scope." ve yalnızca İngilizce. Danışmanla değerlendirilmeli (açık soru). |
+| `sentence-transformers/clip-ViT-B-32-multilingual-v1` | `58edf8c` | Apache-2.0 | Doğrudan çok dilli yol (ALT-04, `approach = "multilingual"`). Görsel kodlayıcısı OpenAI CLIP'tir; yukarıdaki kart notları geçerli. sentence-transformers kütüphanesi olmadan, düz transformers ile yüklenir. |
+
+## Fixture görselleri
+
+`fixtures/images/` altındaki fotoğraflar Wikimedia Commons'tan alınan CC0 ya da kamu malı dosyalardır. Kaynak, yazar ve lisansları [fixtures/images/SOURCES.md](../fixtures/images/SOURCES.md) dosyasında listelenir. SVG'ler proje katkısıdır (CC0).
+
 ## Araçlar (dağıtılmaz)
 
 | Araç | Sürüm | Lisans | Kullanım |

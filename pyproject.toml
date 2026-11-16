@@ -30,18 +30,41 @@ dev = [
     "pytest-cov>=7.1,<8",
     "ruff>=0.17,<0.18",
 ]
+# Alt metin modelleri (Faz 2: BLIP, MarianMT, E5, CLIP). Ayrı kilitlenir
+# (requirements-ml.lock, yalnızca Linux/Docker); torch CPU indeksinden gelir.
+# Bu ekstra kurulu değilse alt metin modülünün yalnızca kural tabanlı adımları çalışır.
+ml = [
+    "torch>=2.15,<2.16",
+    "transformers>=5.23,<6",
+    "sentencepiece>=0.2.3,<0.3",
+    "safetensors>=0.8,<0.9",
+    "pillow>=13,<14",
+    "numpy>=2.4,<3",
+]
 
 [project.scripts]
 yanki = "yanki.cli:app"
+
+# torch yalnızca CPU indeksinden kurulur (NFR-12: GPU varsayılmaz; CUDA paketleri çekilmez).
+[tool.uv.sources]
+torch = { index = "pytorch-cpu" }
+
+[[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true
 
 [tool.hatch.build.targets.wheel]
 packages = ["yanki"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-addopts = "-ra --strict-markers"
+# Gerçek model ağırlığı gerektiren testler varsayılan olarak seçilmez;
+# `pytest -m models` ile çalıştırılır (komut satırındaki -m bunu geçersiz kılar).
+addopts = "-ra --strict-markers -m 'not models'"
 markers = [
     "browser: Chromium başlatan entegrasyon testleri (Playwright gerekir)",
+    "models: gerçek model ağırlıkları gerektiren testler (ml ekstrası + `yanki models download`)",
 ]
 
 [tool.coverage.run]

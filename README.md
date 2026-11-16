@@ -5,7 +5,13 @@
 Yankı bir web sayfasını kendisi açar ve üç alanda denetler: WCAG 2.2 kuralları, görsel alt metinlerinin anlamı ve klavyeyle gezinme. Bulguların hepsi kanıta dayanır ve tek bir erişilebilirlik puanında toplanır.
 
 > [!NOTE]
-> **Durum: Faz 1 tamamlandı.** `yanki scan` komutu bir URL'yi ya da yerel HTML dosyasını Chromium'da açar, axe-core ile WCAG 2.2 A/AA kurallarını denetler ve gerçek tuş basımlarıyla klavye testi yapar (Tab gezisi, odak göstergesi, odak sırası, klavye tuzağı, tıklanabilir ama odaklanamaz öğeler, Enter/Boşluk, modal, atla bağlantısı). Bulguları ve sayfadaki öğeleri JSON rapor olarak yazar; klavye bulgularının ekran görüntüleri raporun yanındaki `evidence/` klasörüne yazılır. Alt metin analizi, puanlama, HTML/PDF rapor ve API henüz yoktur; bunlar **planlanan** tasarımdır. Gereksinimlerin tamamı [docs/SRS.md](docs/SRS.md) dosyasındadır.
+> **Durum: Faz 2 tamamlandı.** `yanki scan` bir URL'yi ya da yerel HTML dosyasını Chromium'da açar ve sayfayı üç modülle denetler:
+>
+> - **Kural kontrolü:** axe-core ile WCAG 2.2 A/AA kuralları.
+> - **Klavye testi:** gerçek tuş basımlarıyla Tab gezisi, odak göstergesi, odak sırası, klavye tuzağı, tıklanabilir ama odaklanamaz öğeler, Enter/Boşluk, modal ve atla bağlantısı.
+> - **Alt metin analizi:** eksik ve genel ifadeli alt metinler, görsel–metin uyumu (BLIP, çeviri, E5, CLIP), belirsiz bağlantı adları, alt metin dili.
+>
+> Sonuç JSON rapor olarak yazılır; kanıt görüntüleri raporun yanındaki `evidence/` klasörüne konur. Alt metin eşikleri henüz **kalibre edilmemiş** başlangıç değerleridir; etiketli Set A bekleniyor. Puanlama, HTML/PDF rapor ve API **planlanan** tasarımdır. Gereksinimlerin tamamı [docs/SRS.md](docs/SRS.md) dosyasındadır.
 
 ---
 
@@ -65,9 +71,13 @@ Her görsel için şu adımlar izlenir:
 
 Sonuçta alt metin dört sınıftan birine düşer: **uygun**, **yetersiz**, **uyumsuz**, **eksik**. Bunlara ek olarak:
 
-- `alt=""` ile işaretli dekoratif görseller ayrı tutulur.
-- `image1.png`, `resim` gibi genel ifadeler kural dışı desen olarak işaretlenir.
-- Her yapay zeka bulgusu 0–1 arası bir güven skoru taşır. Eşiğin altındaki bulgular **"elle incele"** olarak ayrılır.
+- `alt=""`, `role="presentation"` ya da `aria-hidden` ile işaretli dekoratif görseller ayrı tutulur; bulgu üretmez.
+- `image1.png`, `resim`, `DSC_0012` gibi dosya adları ve genel ifadeler kural tabanlı desenle işaretlenir.
+- "Tıklayın", "devamı" gibi belirsiz bağlantı ve düğme adları ile sayfa dilinden farklı dildeki alt metinler "elle incele" olarak raporlanır.
+- Her yapay zeka bulgusu 0–1 arası bir güven skoru taşır. Eşiğin altındaki bulgular **"elle incele"** olarak ayrılır. Bağlantı içindeki görseller ile açıklaması metin, grafik ya da logo içeren görseller de en fazla "elle incele" olur.
+- Kural tabanlı ve model tabanlı bulgular `evidence.method` alanıyla ayrılır.
+
+Görsel baytları **yeni bir ağ isteği yapılmadan** sayfanın kendi yanıtlarından alınır. SVG'ler için öğenin ekran görüntüsü kullanılır. İndirilemeyen ya da çözülemeyen görseller "analiz edilemedi" olarak raporlanır. Aynı görselin sonuçları içerik karmasıyla önbelleklenir (`.yanki/cache`, `YANKI_CACHE_DIR`); dizin silinerek temizlenir. Modeller, eşikler ve yaklaşım (`translate` ya da `multilingual`) `[alt_text]` ayarlarıyla değiştirilir.
 
 ### 3. Klavye testi
 
@@ -206,8 +216,8 @@ docker compose run --rm yanki     # konteynerde kabuk aç
 İmaj neler içerir:
 
 - **Taban:** Playwright'ın resmi Python imajı (`mcr.microsoft.com/playwright/python:v1.65.2-noble`). Chromium ve sistem bağımlılıkları hazır gelir. Python `playwright` paketi aynı sürüme (1.65.2) kilitlidir.
-- **Python ortamı:** `/opt/venv`. Bağımlılıklar hash'li `requirements.lock` dosyasından kurulur (`scripts/lock.sh` ile uv kullanılarak üretilir).
-- **Model önbelleği:** `yanki-models` volume'ü (`/models`). Model ağırlıkları bir kez indirilir, sonraki çalıştırmalar çevrimdışıdır.
+- **Python ortamı:** `/opt/venv`. Bağımlılıklar hash'li `requirements-ml.lock` dosyasından kurulur (temel paketler + PyTorch CPU + transformers; yalnızca Linux). Kilitler `scripts/lock.sh` ile uv kullanılarak üretilir. Torch'suz `requirements.lock` Windows, Linux ve macOS'ta doğrudan kurulum içindir; bu kurulumda alt metin modülünün yalnızca kural tabanlı adımları çalışır.
+- **Model önbelleği:** `yanki-models` volume'ü (`/models`). Ağırlıklar `yanki models download` ile bir kez, sabit revizyonlarıyla indirilir; taramalar çevrimdışıdır ve tarama sırasında indirme yapılmaz.
 - **Kaynak kod:** `/app` dizinine bind mount ile bağlanır. Kod değişince yeniden build gerekmez, yalnızca bağımlılık değişince gerekir.
 
 Güvenlik ve donanım ayrıntıları:
@@ -232,9 +242,20 @@ docker compose run --rm yanki yanki scan tests/pages/clean.html --viewport 1280x
 # Ana makinedeki bir sunucu: yerel ağ izni açıkça verilmelidir (NFR-08)
 docker compose run --rm yanki yanki scan http://host.docker.internal:8000 --allow-private-network
 
+# Alt metin modellerini indir (bir kez; ~2,5 GB, yalnızca ağırlıklar)
+docker compose run --rm yanki yanki models download
+
 # Klavye testinin Set B / Set C ölçümü (NFR-04, NFR-05)
 docker compose run --rm yanki python experiments/keyboard_eval.py
+
+# Alt metin modülünün gerçek modellerle ölçümü (Set B/C, NFR-01; Set A hazırsa NFR-03)
+docker compose run --rm yanki python experiments/alt_eval.py
+
+# Gerçek model gerektiren testler (varsayılan test koşusunda seçilmez)
+docker compose run --rm yanki pytest -m models
 ```
+
+Modeller indirilmemişse tarama yine çalışır: kural tabanlı alt metin denetimleri yapılır, model gerektiren görseller "analiz edilemedi" olarak raporlanır ve bir uyarı yazılır.
 
 Klavye testi sayfadaki kontrolleri etkinleştirir. Etkinleştirme politikası temkinlidir: form içindeki kontroller, gönder/sıfırla düğmeleri ve gerçek adrese giden bağlantılar asla etkinleştirilmez. Klavye testi `[keyboard] enabled = false` ile kapatılabilir.
 
@@ -281,7 +302,7 @@ Raporlar bind mount sayesinde proje klasörüne yazılır ve ana makineden doğr
 
 ## Depo yapısı
 
-Hedeflenen yapı. Faz 0'da `core/{scan,rules,schema}.py`, `cli.py` ve `config.py`; Faz 1'de `core/keyboard/`, `core/evidence.py`, `fixtures/known_issues/`, `fixtures/clean/` ve `experiments/keyboard_eval.py` oluşturuldu; diğerleri ilgili fazda eklenir:
+Hedeflenen yapı. Faz 0'da `core/{scan,rules,schema}.py`, `cli.py` ve `config.py`; Faz 1'de `core/keyboard/`, `core/evidence.py`, `fixtures/known_issues/`, `fixtures/clean/` ve `experiments/keyboard_eval.py`; Faz 2'de `core/alttext/`, `fixtures/images/`, `fixtures/alt_text_labeled/` (biçim tanımı; Set A bekleniyor) ve `experiments/alt_eval.py` oluşturuldu; diğerleri ilgili fazda eklenir:
 
 ```text
 yanki/
@@ -315,8 +336,8 @@ compose.yaml         # geliştirme ortamı (mevcut)
 | --- | --- | --- | --- |
 | 0 | İskelet: repo, `pyproject.toml`, CI, `yanki scan` ile axe-core → JSON (Docker ortamı hazır) | TAR-01..05, KUR-01..03, RAP-01 (JSON), NFR-08/11/15 | ✅ Tamamlandı |
 | 1 | Klavye modülü ve Set B/C test sayfaları | KLV-01..10, NFR-04/05 | ✅ Tamamlandı |
-| 2 | Alt metin analizi ve model karşılaştırma deneyi | ALT-01..12, NFR-01/03/12/13 | ⏳ Sıradaki |
-| 3 | Puanlama, HTML/PDF rapor, CI eşikleri | PUA-01..05, RAP-01..06, CLI-01..04 | Planlandı |
+| 2 | Alt metin analizi ve model karşılaştırma deneyi | ALT-01..12, NFR-01/03/12/13 | ✅ Tamamlandı (NFR-03 ve model seçimi Set A'yı bekliyor) |
+| 3 | Puanlama, HTML/PDF rapor, CI eşikleri | PUA-01..05, RAP-01..06, CLI-01..04 | ⏳ Sıradaki |
 | 4 | REST API, SQLite, Streamlit demo | API-01..05, UI-01, UI-03..06 | Planlandı |
 | 5 | Toplu tarama, Lighthouse/WAVE karşılaştırması, CSV | KAR-01..05 | Planlandı |
 | 6 | React + Vite arayüzü | UI-02 | Sonra |

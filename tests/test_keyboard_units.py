@@ -299,7 +299,7 @@ def test_artifacts_not_in_json_and_saved_by_content_hash(tmp_path: Path) -> None
     assert store.add(png) == name  # aynı içerik, aynı ad (NFR-06)
     report = _report(store.files)
     assert "artifacts" not in report.model_dump_json()
-    assert report.schema_version == SCHEMA_VERSION == "0.2.0"
+    assert report.schema_version == SCHEMA_VERSION == "0.3.0"
     written = save_evidence(report, tmp_path)
     assert written == [tmp_path.resolve() / "evidence" / Path(name).name]
     assert written[0].read_bytes() == png

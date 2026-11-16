@@ -75,6 +75,22 @@ _COLLECT_JS = r"""
       }
       return el.getClientRects().length > 0;
     };
+    const CONTROL = 'a[href], area[href], button, [role="button"], [role="link"]';
+    // Görselin alt dışındaki metin alternatifi (ALT-01): aria-labelledby, aria-label, title.
+    const textAlternative = (el) => {
+      const ids = (el.getAttribute('aria-labelledby') || '').trim();
+      if (ids) {
+        const text = norm(ids.split(/\s+/).map(id => {
+          const ref = document.getElementById(id);
+          return ref ? (ref.innerText || ref.textContent || '') : '';
+        }).join(' '));
+        if (text) return text;
+      }
+      const label = norm(el.getAttribute('aria-label'));
+      if (label) return label;
+      const title = norm(el.getAttribute('title'));
+      return title || null;
+    };
 
     const out = [];
     for (const el of document.querySelectorAll(ALL)) {
@@ -99,10 +115,15 @@ _COLLECT_JS = r"""
           heading_level: h ? headingLevel(h) : null,
           surrounding_text: surrounding(el),
         },
+        lang: (el.closest('[lang]') || {getAttribute: () => null}).getAttribute('lang') || null,
+        aria_hidden: !!el.closest('[aria-hidden="true" i]'),
+        in_control: !!(el.parentElement && el.parentElement.closest(CONTROL)),
       };
       if (kind === 'image') {
         item.alt = el.getAttribute('alt');
-        item.src = el.currentSrc || el.getAttribute('src');
+        item.label = textAlternative(el);
+        item.src = el.currentSrc || el.src || el.getAttribute('src');
+        if (el.localName === 'img') item.natural_width = el.naturalWidth;
       }
       if (kind === 'link') item.href = el.href || el.getAttribute('href');
       if (el.localName === 'input') {

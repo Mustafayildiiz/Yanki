@@ -6,10 +6,11 @@ olgudur; burada sabittir. Ciddiyet ve güven ``KeyboardConfig``'den gelir.
 
 from __future__ import annotations
 
-import hashlib
-
 from yanki.config import KeyboardConfig
+from yanki.core.evidence import ArtifactStore
 from yanki.core.schema import Evidence, Finding, KeyStep
+
+__all__ = ["RECOMMENDATIONS", "RULES", "WCAG", "ArtifactStore", "make_finding"]
 
 RULES: dict[str, str] = {
     "keyboard_trap": "KLV-05",
@@ -80,20 +81,6 @@ RECOMMENDATIONS: dict[str, str] = {
         "odak ana içeriğe geçmelidir."
     ),
 }
-
-
-class ArtifactStore:
-    """Kanıt dosyaları; içerik karmasıyla adlandırılır (KLV-10, NFR-06)."""
-
-    def __init__(self) -> None:
-        self.files: dict[str, bytes] = {}
-
-    def add(self, png: bytes | None) -> str | None:
-        if not png:
-            return None
-        name = f"evidence/{hashlib.sha256(png).hexdigest()[:16]}.png"
-        self.files[name] = png
-        return name
 
 
 def make_finding(

@@ -10,6 +10,8 @@ from importlib import resources
 from importlib.metadata import version
 from pathlib import Path
 
+import pytest
+
 from yanki.core.rules import AXE_SHA256, AXE_VERSION
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -52,10 +54,33 @@ def test_lock_file_pins_playwright_and_has_hashes() -> None:
     assert "--hash=sha256:" in lock
 
 
-def test_every_locked_package_has_a_license_entry() -> None:
-    lock = (ROOT / "requirements.lock").read_text(encoding="utf-8")
+@pytest.mark.parametrize("lock_name", ["requirements.lock", "requirements-ml.lock"])
+def test_every_locked_package_has_a_license_entry(lock_name: str) -> None:
+    lock = (ROOT / lock_name).read_text(encoding="utf-8")
     locked = {m.group(1).lower() for m in re.finditer(r"^([A-Za-z0-9_.-]+)==", lock, re.MULTILINE)}
     licenses = (ROOT / "docs" / "THIRD_PARTY_LICENSES.md").read_text(encoding="utf-8").lower()
     missing = sorted(p for p in locked if f"| {p} |" not in licenses)
     assert missing == [], f"Lisans listesinde eksik paketler: {missing}"
     assert "| axe-core |" in licenses
+
+
+def test_base_lock_has_no_ml_packages() -> None:
+    """Native CI işleri (Windows, macOS, Linux) torch kurmaz; ML yalnızca ml kilidinde."""
+    lock = (ROOT / "requirements.lock").read_text(encoding="utf-8")
+    assert not re.search(r"^(torch|transformers)==", lock, re.MULTILINE)
+
+
+def test_ml_lock_is_linux_cpu_only_and_hashed() -> None:
+    """ML kilidi: torch CPU indeksinden, CUDA paketi yok, yalnızca Linux (NFR-12, NFR-15)."""
+    lock = (ROOT / "requirements-ml.lock").read_text(encoding="utf-8")
+    assert lock.startswith("--extra-index-url https://download.pytorch.org/whl/cpu\n")
+    assert re.search(r"^torch==[\d.]+\+cpu ; sys_platform == 'linux'", lock, re.MULTILINE)
+    assert re.search(r"^playwright==1\.65\.2 ", lock, re.MULTILINE)
+    assert not re.search(r"^(nvidia-|triton)", lock, re.MULTILINE)
+    assert "sys_platform == 'darwin'" not in lock and "sys_platform == 'win32'" not in lock
+    assert "--hash=sha256:" in lock
+
+
+def test_docker_image_installs_ml_lock() -> None:
+    dockerfile = (ROOT / "Dockerfile").read_text(encoding="utf-8")
+    assert "pip install -r requirements-ml.lock" in dockerfile

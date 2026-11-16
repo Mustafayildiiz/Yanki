@@ -31,11 +31,13 @@ RUN apt-get update \
 WORKDIR /app
 USER pwuser
 
-# Bağımlılık katmanı: kilitli ve hash'li requirements.lock (NFR-15).
-# Kilit dosyası scripts/lock.sh (uv pip compile) ile üretilir.
+# Bağımlılık katmanı: kilitli ve hash'li requirements-ml.lock (NFR-15).
+# Temel + dev + ml (torch CPU, transformers) paketlerini içerir; yalnızca Linux.
+# Kilit dosyaları scripts/lock.sh (uv pip compile) ile üretilir. Model
+# ağırlıkları imaja girmez; `yanki models download` ile /models'e indirilir.
 # README.md, pyproject.toml'daki `readme` alanı için kopyalanır.
 COPY --chown=pwuser:pwuser README.md pyproject.toml* requirements*.lock* ./
-RUN if [ -f requirements.lock ]; then pip install -r requirements.lock; fi
+RUN pip install -r requirements-ml.lock
 
 # Kaynak kod. Kurulum kilitli bağımlılıklarla yapılır (--no-deps).
 COPY --chown=pwuser:pwuser . .

@@ -1,8 +1,9 @@
-"""requirements.lock'taki paketlerin lisans tablosunu üretir (NFR-15).
+"""Kilit dosyasındaki paketlerin lisans tablosunu üretir (NFR-15).
 
 Konteynerde çalıştırın (paketler kurulu olmalı):
 
     docker compose run --rm -T yanki python scripts/list_licenses.py > /tmp/licenses.md
+    docker compose run --rm -T yanki python scripts/list_licenses.py requirements-ml.lock
 
 Çıktı docs/THIRD_PARTY_LICENSES.md içindeki Python tablosuna yapıştırılır.
 Lisans, paket metadata'sındaki License-Expression, License ya da
@@ -40,7 +41,8 @@ def license_of(name: str) -> str:
 
 
 def main() -> None:
-    lock = (ROOT / "requirements.lock").read_text(encoding="utf-8")
+    name = sys.argv[1] if len(sys.argv) > 1 else "requirements.lock"
+    lock = (ROOT / name).read_text(encoding="utf-8")
     rows = []
     for line in lock.splitlines():
         m = LOCK_LINE.match(line)

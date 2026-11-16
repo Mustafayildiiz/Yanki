@@ -1,0 +1,32 @@
+<!doctype html>
+<!-- Set B (ALT-12): alt metin dili sayfa dilinden farklı ve lang ile işaretlenmemiş.
+     #l-en: Türkçe sayfada İngilizce alt metin, lang yok → "elle incele" bulgusu.
+     #l-en-ok: lang="en" bölümünde İngilizce alt metin → bulgu yok.
+     #l-tr: Türkçe alt metin → bulgu yok. Klavye bulgusu beklenmez. -->
+<html lang="tr">
+<head>
+  <meta charset="utf-8">
+  <title>Park rehberi</title>
+  <style>
+    body { font-family: sans-serif; margin: 0; color: #222; background: #fff; }
+    header, main, footer { padding: 1rem 2rem; }
+    img { max-width: 300px; height: auto; display: block; margin: .5rem 0; }
+  </style>
+</head>
+<body>
+  <header><a href="#anasayfa">Ana sayfa</a></header>
+  <main>
+    <h1>Parkta hafta sonu</h1>
+    <p>Köpek dostu alanımız her gün açıktır.</p>
+    <img id="l-en" src="../images/dog_ball.jpg" alt="A black dog lying on the grass next to a yellow ball">
+    <p>Çim alanlarda dinlenmek serbesttir.</p>
+    <img id="l-tr" src="../images/dog_resting.jpg" alt="Çimenlerin üzerinde uzanmış sarı tüylü bir köpek">
+    <section lang="en">
+      <h2>For visitors</h2>
+      <p>The lake is open for kayaking in summer.</p>
+      <img id="l-en-ok" src="../images/kayaks_lake.jpg" alt="Kayaks on a turquoise lake surrounded by mountains">
+    </section>
+  </main>
+  <footer><a href="#iletisim">İletişim</a></footer>
+</body>
+</html>

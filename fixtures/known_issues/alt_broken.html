@@ -1,0 +1,29 @@
+<!doctype html>
+<!-- Set B (ALT-10): indirilemeyen ya da çözülemeyen görseller. Bulgu üretmez;
+     raporda "analiz edilemedi" (status=failed) olarak görünür. Alt metinleri
+     anlamlıdır, böylece kural tabanlı denetimler de bulgu üretmez.
+     #b-corrupt: görsel olmayan dosya; #b-missing: olmayan dosya;
+     #b-blocked: ağ politikasının engellediği yerel adres (NFR-08).
+     #b-ok: sağlam görsel, analiz edilir. Klavye bulgusu beklenmez. -->
+<html lang="tr">
+<head>
+  <meta charset="utf-8">
+  <title>Duyurular</title>
+  <style>
+    body { font-family: sans-serif; margin: 0; color: #222; background: #fff; }
+    header, main, footer { padding: 1rem 2rem; }
+    img { width: 240px; height: 160px; display: block; margin: .5rem 0; }
+  </style>
+</head>
+<body>
+  <header><a href="#anasayfa">Ana sayfa</a></header>
+  <main>
+    <h1>Duyurular</h1>
+    <img id="b-corrupt" src="../images/broken/corrupt.jpg" alt="Kumsalda koşan çocuklar">
+    <img id="b-missing" src="../images/does-not-exist.jpg" alt="Kütüphanenin yeni okuma salonu">
+    <img id="b-blocked" src="http://127.0.0.1:9/blocked.jpg" alt="Kent müzesinin giriş kapısı">
+    <img id="b-ok" src="../images/kayaks_lake.jpg" alt="Dağlarla çevrili turkuaz gölde kano yapanlar">
+  </main>
+  <footer><a href="#iletisim">İletişim</a></footer>
+</body>
+</html>

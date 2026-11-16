@@ -1,0 +1,16 @@
+{
+  "page": "alt_mismatch.html",
+  "description": "Görselle anlamca ilgisiz alt metinler (ALT-06, uyumsuz). Model gerektirir; axe bunları kaçırır.",
+  "expected": [],
+  "allowed_review": [],
+  "alt_text": {
+    "expected": [
+      {"type": "alt_text", "rule": "ALT-06", "check": "mismatch", "selector": "#x-dog", "severity": "important", "needs_review": false, "requires_models": true},
+      {"type": "alt_text", "rule": "ALT-06", "check": "mismatch", "selector": "#x-car", "severity": "important", "needs_review": false, "requires_models": true},
+      {"type": "alt_text", "rule": "ALT-06", "check": "mismatch", "selector": "#x-horses", "severity": "important", "needs_review": false, "requires_models": true},
+      {"type": "alt_text", "rule": "ALT-06", "check": "mismatch", "selector": "#x-lighthouse", "severity": "important", "needs_review": false, "requires_models": true},
+      {"type": "alt_text", "rule": "ALT-06", "check": "mismatch", "selector": "#x-sailboat", "severity": "important", "needs_review": false, "requires_models": true}
+    ],
+    "allowed_review": []
+  }
+}

@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="480" height="160" viewBox="0 0 480 160">
+  <!-- Yankı test fixture'ı için kurgusal duyuru görseli (proje katkısı, CC0). -->
+  <rect width="480" height="160" fill="#fff4d6" stroke="#8a5a00" stroke-width="4"/>
+  <text x="240" y="60" text-anchor="middle" font-family="sans-serif" font-size="30" font-weight="bold" fill="#5a3a00">SU KESİNTİSİ</text>
+  <text x="240" y="105" text-anchor="middle" font-family="sans-serif" font-size="22" fill="#5a3a00">12 Mart, 09.00–17.00</text>
+  <text x="240" y="138" text-anchor="middle" font-family="sans-serif" font-size="18" fill="#5a3a00">Merkez ve Yenimahalle</text>
+</svg>

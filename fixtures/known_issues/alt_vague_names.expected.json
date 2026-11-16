@@ -1,0 +1,15 @@
+{
+  "page": "alt_vague_names.html",
+  "description": "Erişilebilir adı belirsiz bağlantı ve düğmeler (ALT-11). Kural tabanlı; bağlam WCAG 2.4.4'ü karşılayabileceği için her zaman 'elle incele'.",
+  "expected": [],
+  "allowed_review": [],
+  "alt_text": {
+    "expected": [
+      {"type": "alt_text", "rule": "ALT-11", "check": "vague_name", "selector": "#v-click", "severity": "low", "needs_review": true, "requires_models": false},
+      {"type": "alt_text", "rule": "ALT-11", "check": "vague_name", "selector": "#v-here", "severity": "low", "needs_review": true, "requires_models": false},
+      {"type": "alt_text", "rule": "ALT-11", "check": "vague_name", "selector": "#v-more", "severity": "low", "needs_review": true, "requires_models": false},
+      {"type": "alt_text", "rule": "ALT-11", "check": "vague_name", "selector": "#v-btn", "severity": "low", "needs_review": true, "requires_models": false}
+    ],
+    "allowed_review": []
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "page": "alt_lang_mismatch.html",
+  "description": "lang ile işaretlenmemiş, sayfa dilinden farklı dilde alt metin (ALT-12). Sezgisel dil tespiti; her zaman 'elle incele'. #l-en-ok (lang=en bölümü) ve #l-tr bulgu üretmemelidir.",
+  "expected": [],
+  "allowed_review": [],
+  "alt_text": {
+    "expected": [
+      {"type": "alt_text", "rule": "ALT-12", "check": "lang_mismatch", "selector": "#l-en", "severity": "low", "needs_review": true, "requires_models": false}
+    ],
+    "allowed_review": []
+  }
+}

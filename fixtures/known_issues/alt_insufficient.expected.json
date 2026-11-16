@@ -1,0 +1,15 @@
+{
+  "page": "alt_insufficient.html",
+  "description": "Görselle ilgili ama içeriği aktarmayacak kadar genel alt metinler (ALT-06, yetersiz). Model gerektirir; needs_review sınıra yakınlığa bağlı olduğundan beklentide belirtilmez.",
+  "expected": [],
+  "allowed_review": [],
+  "alt_text": {
+    "expected": [
+      {"type": "alt_text", "rule": "ALT-06", "check": "insufficient", "selector": "#i-horses", "severity": "moderate", "requires_models": true},
+      {"type": "alt_text", "rule": "ALT-06", "check": "insufficient", "selector": "#i-apartments", "severity": "moderate", "requires_models": true},
+      {"type": "alt_text", "rule": "ALT-06", "check": "insufficient", "selector": "#i-boathouse", "severity": "moderate", "requires_models": true},
+      {"type": "alt_text", "rule": "ALT-06", "check": "insufficient", "selector": "#i-market", "severity": "moderate", "requires_models": true}
+    ],
+    "allowed_review": []
+  }
+}

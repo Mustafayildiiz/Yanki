@@ -4,5 +4,6 @@
   "expected": [
     {"type": "keyboard", "rule": "KLV-08", "check": "modal_focus_not_returned", "selector": "#confirm", "severity": "moderate", "needs_review": false}
   ],
-  "allowed_review": []
+  "allowed_review": [],
+  "alt_text": {"expected": [], "allowed_review": []}
 }

@@ -1,0 +1,44 @@
+<!doctype html>
+<!-- Set B (ALT-01): alt metni ve erişilebilir adı olmayan bilgi verici görseller.
+     #m-dog: alt özniteliği yok. #m-link-img: bağlantının tek içeriği olan alt'sız görsel.
+     #m-input: alt'sız görsel düğme. #m-roleimg: adı olmayan role="img".
+     Klavye bulgusu beklenmez. -->
+<html lang="tr">
+<head>
+  <meta charset="utf-8">
+  <title>Hayvan barınağı</title>
+  <style>
+    body { font-family: sans-serif; margin: 0; color: #222; background: #fff; }
+    header, main, footer { padding: 1rem 2rem; }
+    img { max-width: 320px; height: auto; display: block; }
+    .badge { width: 120px; height: 120px; background: url("../images/cat_burmese.jpg") center / cover; }
+  </style>
+</head>
+<body>
+  <header>
+    <nav aria-label="Ana menü">
+      <a href="#sahiplen">Sahiplen</a>
+      <a href="#bagis">Bağış yap</a>
+    </nav>
+  </header>
+  <main>
+    <h1>Bu haftanın misafirleri</h1>
+    <p>Barınağımızda yeni yuva bekleyen dostlarımız:</p>
+    <img id="m-dog" src="../images/dog_ball.jpg">
+    <h2>Sahiplenme</h2>
+    <p>Ayrıntılar için görsele tıklayın:</p>
+    <a id="m-link" href="#kedi-detay"><img id="m-link-img" src="../images/cat_hagia_sophia.jpg"></a>
+    <h2>Gönüllü ol</h2>
+    <form action="#gonullu">
+      <label for="email">E-posta</label>
+      <input id="email" type="email" autocomplete="email">
+      <input id="m-input" type="image" src="../images/bicycle_grass.jpg" width="160">
+    </form>
+    <h2>Ayın kedisi</h2>
+    <div id="m-roleimg" class="badge" role="img"></div>
+  </main>
+  <footer>
+    <a href="#iletisim">İletişim</a>
+  </footer>
+</body>
+</html>

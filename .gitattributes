@@ -1,0 +1,8 @@
+# Windows'ta geliştirilip Linux konteynerinde çalıştığı için satır sonları LF.
+* text=auto eol=lf
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.webp binary
+*.gif binary
+*.pdf binary

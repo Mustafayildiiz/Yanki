@@ -1,0 +1,29 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+build/
+dist/
+
+# Test ve araçlar
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Tarama çıktıları, önbellek ve modeller (yerelde kalır)
+reports/
+scans/
+evidence/
+models/
+*.sqlite
+*.db
+
+# Ortam ve editör
+.env
+.vscode/
+.idea/
+.claude/settings.local.json

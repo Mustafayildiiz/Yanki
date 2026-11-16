@@ -1,0 +1,34 @@
+# Yankı geliştirme ortamı.
+#
+#   docker compose build                      # imajı oluştur
+#   docker compose run --rm yanki             # konteynerde kabuk aç
+#   docker compose run --rm yanki pytest      # testleri çalıştır (Faz 0 sonrası)
+#   docker compose run --rm yanki yanki scan https://ornek.gov.tr   (Faz 0 sonrası)
+#
+# Kaynak kod bind mount ile bağlanır; kodda yapılan değişiklik yeniden
+# build gerektirmez. Yalnızca bağımlılık değişince build gerekir.
+
+services:
+  yanki:
+    build: .
+    image: yanki:dev
+    working_dir: /app
+    volumes:
+      - .:/app
+      - yanki-models:/models
+    environment:
+      YANKI_DEVICE: cpu
+    # Chromium, varsayılan 64 MB /dev/shm ile çöker.
+    shm_size: "1gb"
+    init: true
+    # Yalıtım (NFR-09): ek yetki yok, tüm Linux yetenekleri kapalı.
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    stdin_open: true
+    tty: true
+
+volumes:
+  # İndirilen model ağırlıkları (BLIP, E5, CLIP, opus-mt) burada kalır.
+  yanki-models:

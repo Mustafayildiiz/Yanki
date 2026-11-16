@@ -308,3 +308,22 @@ def test_artifacts_not_in_json_and_saved_by_content_hash(tmp_path: Path) -> None
 def test_save_evidence_rejects_path_traversal(tmp_path: Path) -> None:
     with pytest.raises(ValueError):
         save_evidence(_report({"../kacis.png": b"x"}), tmp_path)
+
+
+def test_trap_composite_native_controls_use_larger_threshold() -> None:
+    # Tarih alanının iç parçaları: activeElement aynı kalır, tuzak değildir.
+    det = TrapDetector(3, composite_repeats=20)
+    assert det.feed(1)[0] == "continue"
+    for _ in range(6):
+        assert det.feed(2, composite=True)[0] == "continue"
+    assert det.feed(3)[0] == "continue"
+    # Gerçekten hiç çıkılamıyorsa yine tuzaktır.
+    det = TrapDetector(3, composite_repeats=5)
+    det.feed(1)
+    verdicts = [det.feed(2, composite=True)[0] for _ in range(5)]
+    assert verdicts[-1] == "trap"
+
+
+def test_policy_skips_arrow_key_widgets() -> None:
+    for role in ("slider", "combobox", "listbox", "grid", "tree", "spinbutton"):
+        assert classify(_info(tag="div", native=False, role=role, pointer=True)) is None

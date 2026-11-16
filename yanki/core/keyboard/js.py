@@ -41,6 +41,15 @@ INSTALL = r"""
     return true;
   };
   const DIALOG = 'dialog[open], [role="dialog"], [role="alertdialog"], [aria-modal="true"]';
+  // İç parçaları arasında Tab'lanan yerel kontroller (activeElement değişmez).
+  const COMPOSITE_INPUTS = ['date', 'time', 'datetime-local', 'month', 'week'];
+  const isComposite = (el) =>
+    (el.localName === 'input' && COMPOSITE_INPUTS.includes((el.type || '').toLowerCase())) ||
+    ((el.localName === 'video' || el.localName === 'audio') && el.hasAttribute('controls'));
+  const isModal = (el) => {
+    try { if (el.matches(':modal')) return true; } catch (e) { /* eski tarayıcı */ }
+    return el.getAttribute('aria-modal') === 'true';
+  };
   const modalOf = (el) => {
     const m = el.closest ? el.closest('dialog[open], [aria-modal="true"]') : null;
     return m ? idOf(m) : null;
@@ -104,7 +113,7 @@ INSTALL = r"""
     for (const el of document.querySelectorAll(DIALOG)) {
       if (!visibleEl(el) || area(el.getBoundingClientRect()) <= 0) continue;
       if (out.some(d => get(d.id) && get(d.id).contains(el))) continue;
-      out.push({ id: idOf(el), heuristic: false });
+      out.push({ id: idOf(el), heuristic: false, modal: isModal(el) });
     }
     if (out.length || !fixedBefore) return out;
     const fresh = [];
@@ -119,12 +128,13 @@ INSTALL = r"""
     if (!covered) return out;
     for (const el of fresh) {
       if (fresh.some(o => o !== el && o.contains(el))) continue;
-      out.push({ id: idOf(el), heuristic: true });
+      out.push({ id: idOf(el), heuristic: true, modal: false });
     }
     return out;
   };
   window.__yanki = {
     v: 1, idOf, get, visibleEl, isTabbable, modalOf, deepActive, within, dialogs,
+    isComposite, isModal,
     fixedVisible, mut: 0, obs: null, watch: null,
   };
 }
@@ -163,7 +173,8 @@ READ_FOCUS = """
   else if (rect.x + rect.width <= 0 || rect.y + rect.height <= 0 ||
            rect.x >= innerWidth || rect.y >= innerHeight) reason = 'offscreen';
   return { id: Y.idOf(el), opaque: a.opaque, tag: el.localName, rect, scroll,
-           modal: Y.modalOf(el), visible: reason === null, reason };
+           modal: Y.modalOf(el), visible: reason === null, reason,
+           composite: Y.isComposite(el) };
 }
 """
 

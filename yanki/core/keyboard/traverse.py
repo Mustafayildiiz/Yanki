@@ -24,19 +24,23 @@ class TrapDetector:
 
     - Belge dışı adım: en az bir durak görüldüyse gezi tamamlandı.
     - Aynı öğe ``stuck_repeats`` kez art arda: odak ilerlemiyor (tuzak).
+      Bileşik yerel kontrollerde (tarih alanı, medya) eşik ``composite_repeats``'tir.
     - Belgeden çıkmadan, ilk öğe dışındaki bir öğe tekrar ederse döngü (tuzak).
     - İlk öğeye belgeden çıkmadan dönülürse sarma (``wrapped``); çağıran,
       ziyaret edilmemiş durak kalıp kalmadığına bakarak karar verir.
     """
 
-    def __init__(self, stuck_repeats: int) -> None:
+    def __init__(self, stuck_repeats: int, composite_repeats: int | None = None) -> None:
         self.stuck_repeats = stuck_repeats
+        self.composite_repeats = composite_repeats or stuck_repeats
         self.seq: list[int | None] = []
         self.first_index: dict[int, int] = {}
         self.first: int | None = None
         self.run = 0
 
-    def feed(self, element_id: int | None, *, opaque: bool = False) -> tuple[Verdict, list[int]]:
+    def feed(
+        self, element_id: int | None, *, opaque: bool = False, composite: bool = False
+    ) -> tuple[Verdict, list[int]]:
         i = len(self.seq)
         prev = self.seq[-1] if self.seq else None
         self.seq.append(element_id)
@@ -46,7 +50,8 @@ class TrapDetector:
             if opaque:
                 return "continue", []
             self.run += 1
-            if self.run >= self.stuck_repeats - 1:
+            limit = self.composite_repeats if composite else self.stuck_repeats
+            if self.run >= limit - 1:
                 return "trap", [element_id]
             return "continue", []
         self.run = 0
@@ -115,20 +120,20 @@ async def traverse(
     """Bir yönde gezer; her adımda odağı kaydeder (KLV-01, KLV-02)."""
     key = "Tab" if direction == "forward" else "Shift+Tab"
     result = Traversal(direction)
-    detector = TrapDetector(session.cfg.stuck_repeats)
+    detector = TrapDetector(session.cfg.stuck_repeats, session.cfg.composite_stuck_repeats)
     try:
         start = await session.read_focus()
         if start.id is not None:
             # Sayfa açılışta bir öğeyi odaklamış (ör. autofocus): gezi oradan başlar.
             await _record(session, result, "başlangıç", start, capture)
-            detector.feed(start.id, opaque=start.opaque)
+            detector.feed(start.id, opaque=start.opaque, composite=start.composite)
         for _ in range(session.cfg.max_steps):
             if session.out_of_time():
                 result.outcome = "budget"
                 return result
             state = await session.press(key)
             await _record(session, result, key, state, capture)
-            verdict, cycle = detector.feed(state.id, opaque=state.opaque)
+            verdict, cycle = detector.feed(state.id, opaque=state.opaque, composite=state.composite)
             if verdict == "continue":
                 continue
             result.outcome = verdict

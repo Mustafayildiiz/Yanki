@@ -156,6 +156,10 @@ class KeyboardConfig(_Strict):
     stuck_repeats: int = Field(3, ge=2)
     """Odak bu kadar art arda aynı öğede kalırsa klavye tuzağıdır (KLV-05)."""
 
+    composite_stuck_repeats: int = Field(20, ge=2)
+    """Bileşik yerel kontrollerde (tarih/saat alanı, ``controls`` taşıyan medya) eşik.
+    Chromium bu kontrollerin iç parçaları arasında Tab'lar; ``activeElement`` aynı kalır."""
+
     settle_ms: int = Field(0, ge=0)
     """Her tuştan sonra iki animasyon karesine ek olarak beklenecek süre."""
 

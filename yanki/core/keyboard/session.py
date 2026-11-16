@@ -41,6 +41,8 @@ class FocusState:
     modal: int | None = None
     visible: bool = False
     reason: str | None = None
+    composite: bool = False
+    """Bileşik yerel kontrol (ör. tarih alanı): iç parçalar arasında Tab'lanır."""
 
     @classmethod
     def from_js(cls, data: dict[str, Any]) -> FocusState:
@@ -54,6 +56,7 @@ class FocusState:
             modal=data.get("modal"),
             visible=bool(data.get("visible")),
             reason=data.get("reason"),
+            composite=bool(data.get("composite")),
         )
 
 

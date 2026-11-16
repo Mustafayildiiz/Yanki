@@ -6,7 +6,11 @@
      - #app içindeki eylemler: olaylar React gibi belge kökünde dinlenir;
        öğenin kendisinde dinleyici yoktur (KLV-06/07).
      - .card: tıklanabilir kart ama içindeki bağlantıyla klavyeden erişilir (KLV-06).
-     - #menu-btn: açılır menü (disclosure), modal değildir (KLV-08). -->
+     - #menu-btn: açılır menü (disclosure), modal değildir (KLV-08).
+     - #help-pop: modal olmayan dialog (aria-modal yok); Tab ile dışarı çıkmak serbesttir.
+     - #volume: role=slider; ok tuşlarıyla çalışır, Enter/Boşluk beklemez (KLV-07).
+     - Tarih/saat alanları ve ses oynatıcı: Chromium iç parçaları arasında Tab'lar,
+       activeElement değişmez (KLV-05 takılma sayılmamalı). -->
 <html lang="tr">
 <head>
   <meta charset="utf-8">
@@ -18,6 +22,10 @@
     .card { border: 1px solid #999; padding: 1rem; margin: 1rem 0; cursor: pointer; }
     .card a { color: #00449e; }
     #menu { margin: .5rem 0; }
+    #volume { display: inline-block; width: 160px; height: 28px; background: #ddd;
+              border: 1px solid #555; cursor: pointer; vertical-align: middle; }
+    #help-pop { border: 1px solid #333; padding: .5rem; max-width: 20rem; }
+    label { display: block; margin-top: .6rem; }
   </style>
 </head>
 <body>
@@ -44,6 +52,23 @@
       <h2>Aylık rapor</h2>
       <a id="report-link" href="#rapor">Raporu aç</a>
     </div>
+    <p>
+      <span id="volume-label">Ses düzeyi</span>
+      <span id="volume" role="slider" tabindex="0" aria-labelledby="volume-label"
+            aria-valuemin="0" aria-valuemax="10" aria-valuenow="5"></span>
+    </p>
+    <p>
+      <button id="help-btn" type="button" aria-expanded="false" aria-controls="help-pop">Yardım</button>
+    </p>
+    <div id="help-pop" role="dialog" aria-label="Yardım" hidden>
+      <p>Raporlar 30 gün saklanır.</p>
+      <button id="help-close" type="button">Kapat</button>
+    </div>
+    <label for="start-date">Başlangıç tarihi</label>
+    <input id="start-date" type="date">
+    <label for="start-time">Başlangıç saati</label>
+    <input id="start-time" type="time">
+    <p><audio id="briefing" controls aria-label="Sesli özet"></audio></p>
     <details>
       <summary id="details-sum">Ayrıntılar</summary>
       <p>Rapor her ayın ilk günü hazırlanır.</p>
@@ -87,6 +112,33 @@
       const el = e.target.closest && e.target.closest('[data-action]');
       if (el && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); run(el); }
     });
+
+    const vol = document.getElementById('volume');
+    const setVol = (v) => vol.setAttribute('aria-valuenow', String(Math.max(0, Math.min(10, v))));
+    vol.addEventListener('click', (e) => {
+      const r = vol.getBoundingClientRect();
+      setVol(Math.round(((e.clientX - r.left) / r.width) * 10));
+    });
+    vol.addEventListener('keydown', (e) => {
+      const v = Number(vol.getAttribute('aria-valuenow'));
+      if (e.key === 'ArrowRight' || e.key === 'ArrowUp') { e.preventDefault(); setVol(v + 1); }
+      if (e.key === 'ArrowLeft' || e.key === 'ArrowDown') { e.preventDefault(); setVol(v - 1); }
+    });
+
+    const helpBtn = document.getElementById('help-btn');
+    const helpPop = document.getElementById('help-pop');
+    const closeHelp = () => {
+      helpPop.hidden = true;
+      helpBtn.setAttribute('aria-expanded', 'false');
+      helpBtn.focus();
+    };
+    helpBtn.addEventListener('click', () => {
+      helpPop.hidden = false;
+      helpBtn.setAttribute('aria-expanded', 'true');
+      document.getElementById('help-close').focus();
+    });
+    document.getElementById('help-close').addEventListener('click', closeHelp);
+    helpPop.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeHelp(); });
 
     document.getElementById('card-report').addEventListener('click', (e) => {
       if (e.target.closest('a')) return;

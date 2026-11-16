@@ -24,6 +24,9 @@ Hedef kitle profesyonellerdir. Bu yüzden her bulgu kanıt, güven skoru ve WCAG
 - Faz 0 test sayfaları `tests/pages/` altındadır. `fixtures/known_issues` ve `fixtures/clean` (Set B/C) Faz 1'de ölçüm için ayrıca yazılır; Faz 0 sayfalarını oraya taşıma.
 - **Ağ koruması (NFR-08):** Chromium'un tüm trafiği `yanki/core/netguard.py` içindeki süreç içi proxy'den geçer. Proxy her bağlantıda adı kendisi çözer ve doğruladığı IP'ye bağlanır. `page.route` yönlendirme adımlarını yakalamadığı için politika için kullanılmaz.
 - **Çekirdek async'tir** (`run_scan`). Klavye modülü aynı `Page` nesnesi üzerinde async çalışmalıdır.
+- **CI** (`.github/workflows/ci.yml`) yalnızca `main`'e push'ta ve pull request'te çalışır; dal push'u tek başına tetiklemez. Faz 0 PR'ında docker işi ile Ubuntu, Windows ve macOS işleri geçti (NFR-11 kanıtlandı). `gh` kurulu değildir; CI durumu GitHub REST API ile (`curl`) sorgulanır.
+- **Bilinen sınırlar (Faz 0):** iframe ve shadow DOM içindeki öğeler toplanmaz; axe ana dünyada çalışır, sayfa kodu onu bozabilir; WebRTC UDP yalnızca tarayıcı bayrağıyla kısıtlıdır; hız sınırı ve robots.txt uygulanmadı; macOS'ta `127.0.0.2` ulaşılamadığı için SSRF testleri orada gerçek bir sınama yapmaz.
+- **Kural bulgusunda `rule` alanı** axe kural kimliğini taşır (`image-alt`); SRS §6.4 örneği burada gereksinim numarası kullanır. axe `incomplete` sonuçları bulgu değil, yalnızca `rules_summary` sayısıdır.
 - Her fazın sonunda testler geçmelidir. Ardından kısa bir özet ver: ne yapıldı, hangi gereksinimler karşılandı, hangi sorular açık kaldı. Bir faz bitmeden sonrakine geçme.
 
 | Faz | Kapsam | Gereksinimler |
@@ -179,3 +182,6 @@ Windows'ta Git Bash, `/app` gibi konteyner yollarını dönüştürür. Bu yüzd
 2. CLI-04'ün (`--device cpu|cuda`) önceliği kaynak SRS'te belirtilmemiş.
 3. `opus-mt-tc-big-tr-en` modelinin lisansı kullanılmadan önce kontrol edilmeli.
 4. Proje lisansı henüz belirlenmedi.
+5. axe `incomplete` sonuçları "elle incele" bulguları olarak (`needs_review`) raporlansın mı? Şimdilik yalnızca sayıları yazılıyor.
+6. Hız sınırı ve robots.txt (README'de "planlanıyor") hangi fazda uygulanacak?
+7. SRS'teki `rule` alanı kural bulgularında axe kimliği mi, gereksinim numarası mı olmalı? Şimdilik axe kimliği.

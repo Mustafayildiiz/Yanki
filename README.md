@@ -205,7 +205,7 @@ docker compose run --rm yanki     # konteynerde kabuk aç
 
 İmaj neler içerir:
 
-- **Taban:** Playwright'ın resmi Python imajı (`mcr.microsoft.com/playwright/python:v1.65.2-noble`). Chromium ve sistem bağımlılıkları hazır gelir.
+- **Taban:** Playwright'ın resmi Python imajı (`mcr.microsoft.com/playwright/python:v1.65.2-noble`). Chromium ve sistem bağımlılıkları hazır gelir. Python `playwright` paketi ise Faz 0'da kilitli bağımlılıklarla kurulur.
 - **Python ortamı:** `/opt/venv`. Bağımlılıklar kilit dosyasından kurulur (Faz 0 ile eklenecek).
 - **Model önbelleği:** `yanki-models` volume'ü (`/models`). Model ağırlıkları bir kez indirilir, sonraki çalıştırmalar çevrimdışıdır.
 - **Kaynak kod:** `/app` dizinine bind mount ile bağlanır. Kod değişince yeniden build gerekmez, yalnızca bağımlılık değişince gerekir.

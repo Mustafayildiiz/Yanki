@@ -138,7 +138,7 @@ Bir hedef tutmazsa gizleme; sapmayı ve olası nedenini raporla.
 
 Proje **Docker içinde** çalıştırılır ve test edilir. Python, Playwright ve modelleri ana makineye (Windows) kurma. Testleri, taramaları ve betikleri konteynerde çalıştır.
 
-- **Taban imaj:** `mcr.microsoft.com/playwright/python:v1.65.2-noble`. Faz 0'da `pyproject.toml` / kilit dosyasındaki `playwright` sürümü imaj etiketiyle **aynı** sabitlenmeli (`1.65.2`). Biri yükseltilirse diğeri de yükseltilir.
+- **Taban imaj:** `mcr.microsoft.com/playwright/python:v1.65.2-noble`. İmajda tarayıcılar (`/ms-playwright`) ve sistem bağımlılıkları hazırdır, ama Python `playwright` paketi **yoktur**; Faz 0'da kilit dosyasıyla `/opt/venv` içine kurulur. Faz 0'da `pyproject.toml` / kilit dosyasındaki `playwright` sürümü imaj etiketiyle **aynı** sabitlenmeli (`1.65.2`). Biri yükseltilirse diğeri de yükseltilir.
 - **Python ortamı:** `/opt/venv` içindedir. `requirements.lock` varsa ondan kurulur, ardından paket `pip install --no-deps -e .` ile kurulur. Kilit aracı (uv veya pip-tools) Faz 0'da seçilecek; seçilen araç kilit dosyasını `requirements.lock` olarak dışa aktarmalı ya da Dockerfile buna göre güncellenmeli.
 - **Kaynak kod:** `/app` dizinine bind mount ile bağlanır. Bağımlılık değişikliğinden sonra `docker compose build` gerekir.
 - **Modeller:** `HF_HOME=/models` (`yanki-models` volume'ü).

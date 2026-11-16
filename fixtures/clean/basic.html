@@ -1,0 +1,51 @@
+<!doctype html>
+<!-- Set C (NFR-05): erişilebilir referans sayfa. Klavye ve axe bulgusu beklenmez.
+     Yanlış alarm tuzakları: yalnızca odakta görünen atla bağlantısı (KLV-03,
+     KLV-09), main öncesinde 5'ten fazla durak, form içindeki gönder düğmesi
+     (temkinli politika: etkinleştirilmez). -->
+<html lang="tr">
+<head>
+  <meta charset="utf-8">
+  <title>Belediye hizmetleri</title>
+  <style>
+    body { font-family: sans-serif; margin: 0; color: #222; background: #fff; }
+    .skip { position: absolute; left: -9999px; top: .5rem; background: #fff; color: #00449e;
+            padding: .5rem; border: 2px solid #00449e; }
+    .skip:focus { left: .5rem; }
+    header, main, footer { padding: 1rem 2rem; }
+    nav a { margin-right: 1rem; color: #00449e; }
+    label { display: block; margin-top: .8rem; }
+  </style>
+</head>
+<body>
+  <a id="skip" class="skip" href="#main">Ana içeriğe atla</a>
+  <header>
+    <nav aria-label="Ana menü">
+      <a id="n-home" href="#anasayfa">Ana sayfa</a>
+      <a id="n-services" href="#hizmetler">Hizmetler</a>
+      <a id="n-news" href="#haberler">Haberler</a>
+      <a id="n-tenders" href="#ihaleler">İhaleler</a>
+      <a id="n-contact" href="#iletisim">İletişim</a>
+    </nav>
+  </header>
+  <main id="main">
+    <h1>Su arızası bildirimi</h1>
+    <p>Arızayı bildirmek için formu doldurun. <a id="faq" href="#sss">Sık sorulan sorular</a></p>
+    <form action="#gonderildi">
+      <label for="name">Adınız</label>
+      <input id="name" type="text" autocomplete="name">
+      <label for="district">Mahalle</label>
+      <select id="district">
+        <option>Merkez</option>
+        <option>Yenimahalle</option>
+      </select>
+      <label for="note">Açıklama</label>
+      <textarea id="note" rows="3"></textarea>
+      <p><button id="submit" type="submit">Bildirimi gönder</button></p>
+    </form>
+  </main>
+  <footer>
+    <a id="privacy" href="#kvkk">Kişisel verilerin korunması</a>
+  </footer>
+</body>
+</html>

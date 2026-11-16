@@ -1,0 +1,34 @@
+<!doctype html>
+<!-- Set B (KLV-08, NFR-04): APG diyalog desenine uymayan modal.
+     aria-modal="true" beyan eder ama açılınca odak içeri taşınmaz, Tab pencereden
+     dışarı kaçar, Escape kapatmaz. -->
+<html lang="tr">
+<head>
+  <meta charset="utf-8">
+  <title>Bozuk modal</title>
+  <style>
+    body { font-family: sans-serif; margin: 2rem; color: #222; background: #fff; }
+    #settings { position: fixed; top: 20%; left: 30%; width: 40%; padding: 1.5rem;
+      background: #fff; border: 2px solid #333; }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Profil</h1>
+    <p><button id="open-broken" type="button">Ayarları aç</button></p>
+    <div id="settings" role="dialog" aria-modal="true" aria-labelledby="settings-title" hidden>
+      <h2 id="settings-title">Ayarlar</h2>
+      <button id="s-ok" type="button">Kaydet</button>
+      <button id="s-cancel" type="button">Kapat</button>
+    </div>
+    <p><a id="after-link" href="#gecmis">Geçmiş siparişler</a></p>
+  </main>
+  <script>
+    const dlg = document.getElementById('settings');
+    document.getElementById('open-broken').addEventListener('click', () => { dlg.hidden = false; });
+    for (const id of ['s-ok', 's-cancel']) {
+      document.getElementById(id).addEventListener('click', () => { dlg.hidden = true; });
+    }
+  </script>
+</body>
+</html>

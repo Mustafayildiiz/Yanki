@@ -22,6 +22,7 @@ from pydantic import ValidationError
 from yanki import __version__
 from yanki.config import YankiConfig, load_config
 from yanki.core.errors import ScanError, TargetError
+from yanki.core.evidence import save_evidence
 from yanki.core.scan import run_scan
 
 
@@ -107,7 +108,11 @@ def scan(
         ),
     ] = False,
 ) -> None:
-    """Bir sayfayı tarar ve bulguları ortak şemayla raporlar (TAR, KUR, RAP-01)."""
+    """Bir sayfayı tarar ve bulguları ortak şemayla raporlar (TAR, KUR, KLV, RAP-01).
+
+    Klavye bulgularının ekran görüntüleri raporun yanındaki ``evidence/``
+    klasörüne yazılır (KLV-10).
+    """
     formats = {f.strip().lower() for f in fmt.split(",") if f.strip()}
     unknown = formats - SUPPORTED_FORMATS - PLANNED_FORMATS
     if unknown or not formats:
@@ -148,11 +153,23 @@ def scan(
     if output is None:
         sys.stdout.buffer.write(data.encode("utf-8"))
         sys.stdout.flush()
+        if report.artifacts:
+            typer.echo(
+                f"Uyarı: {len(report.artifacts)} kanıt görüntüsü yazılmadı; "
+                "görüntüler için raporu '-o' ile bir dosyaya yazın.",
+                err=True,
+            )
     else:
         output.parent.mkdir(parents=True, exist_ok=True)
         output.write_text(data, encoding="utf-8")
+        try:
+            save_evidence(report, output.parent)
+        except (OSError, ValueError) as exc:
+            typer.echo(f"Uyarı: kanıt görüntüleri yazılamadı: {exc}", err=True)
+        keyboard = sum(1 for f in report.findings if f.type == "keyboard")
         typer.echo(
-            f"{len(report.findings)} bulgu, {len(report.elements)} öğe. Rapor: {output}",
+            f"{len(report.findings)} bulgu ({keyboard} klavye), {len(report.elements)} öğe. "
+            f"Rapor: {output}",
             err=True,
         )
 

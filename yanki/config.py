@@ -14,7 +14,7 @@ from __future__ import annotations
 import os
 import tomllib
 from pathlib import Path
-from typing import Literal
+from typing import Literal, get_args
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
@@ -90,6 +90,147 @@ class RulesConfig(_Strict):
         return value
 
 
+KeyboardCheck = Literal[
+    "keyboard_trap",
+    "focus_not_visible",
+    "focus_order",
+    "not_focusable",
+    "not_activatable",
+    "modal_focus_not_moved",
+    "modal_focus_escapes",
+    "modal_escape_not_closing",
+    "modal_focus_not_returned",
+    "skip_link_missing",
+    "skip_link_broken",
+]
+"""Klavye modülünün denetim türleri (``evidence.check``)."""
+
+KEYBOARD_CHECKS: tuple[str, ...] = get_args(KeyboardCheck)
+
+
+def _default_keyboard_severity() -> dict[str, Severity]:
+    return {
+        # PUA-03: erişimi engelleyen bulgular en yüksek ciddiyettedir.
+        "keyboard_trap": "critical",
+        "not_focusable": "critical",
+        "not_activatable": "critical",
+        "focus_not_visible": "important",
+        "modal_focus_not_moved": "important",
+        "modal_focus_escapes": "important",
+        "modal_escape_not_closing": "moderate",
+        "modal_focus_not_returned": "moderate",
+        "focus_order": "moderate",
+        "skip_link_broken": "moderate",
+        "skip_link_missing": "low",
+    }
+
+
+def _default_keyboard_confidence() -> dict[str, float]:
+    return {
+        "keyboard_trap": 1.0,
+        "not_focusable": 0.95,
+        "not_activatable": 0.95,
+        "focus_not_visible": 0.9,
+        "modal_focus_not_moved": 0.95,
+        "modal_focus_escapes": 0.95,
+        "modal_escape_not_closing": 0.95,
+        "modal_focus_not_returned": 0.95,
+        "focus_order": 0.8,
+        "skip_link_broken": 0.9,
+        "skip_link_missing": 0.6,
+    }
+
+
+class KeyboardConfig(_Strict):
+    """Klavye testi ayarları (KLV-01..10, SRS §9.1).
+
+    Eşikler, ciddiyetler ve güven skorları başlangıç değerleridir; Set B/C
+    ölçümleriyle (NFR-04, NFR-05) kalibre edilir.
+    """
+
+    enabled: bool = True
+
+    max_steps: int = Field(300, gt=0)
+    """Bir yöndeki en fazla Tab basımı. Aşılırsa bulgu değil uyarı üretilir (KLV-05)."""
+
+    stuck_repeats: int = Field(3, ge=2)
+    """Odak bu kadar art arda aynı öğede kalırsa klavye tuzağıdır (KLV-05)."""
+
+    composite_stuck_repeats: int = Field(20, ge=2)
+    """Bileşik yerel kontrollerde (tarih/saat alanı, ``controls`` taşıyan medya) eşik.
+    Chromium bu kontrollerin iç parçaları arasında Tab'lar; ``activeElement`` aynı kalır."""
+
+    settle_ms: int = Field(0, ge=0)
+    """Her tuştan sonra iki animasyon karesine ek olarak beklenecek süre."""
+
+    time_budget_s: float = Field(180.0, gt=0)
+    """Klavye modülünün toplam süre sınırı. Aşılırsa kalan sondalar atlanır, uyarı yazılır."""
+
+    focus_clip_padding: int = Field(8, ge=0)
+    """Odak göstergesi için odaklı öğenin çevresinde kırpılan pay (piksel, KLV-03)."""
+
+    focus_pixel_delta: int = Field(40, ge=1, le=255)
+    """Bir pikselin "değişti" sayılması için en az kanal farkı (KLV-03)."""
+
+    focus_min_changed_pixels: int = Field(12, ge=1)
+    """Odak göstergesi "görünür" sayılmak için en az değişen piksel sayısı (KLV-03)."""
+
+    order_x_tolerance: int = Field(24, ge=0)
+    order_y_tolerance: int = Field(8, ge=0)
+    """Odak sırası sapması için konum toleransları (piksel, KLV-04)."""
+
+    max_probes: int = Field(30, ge=0)
+    """Enter/Boşluk ve modal sondası yapılacak en fazla öğe (KLV-07, KLV-08)."""
+
+    max_click_probes: int = Field(30, ge=0)
+    """Tıklanabilir ama odaklanamaz aday için en fazla tıklama sondası (KLV-06)."""
+
+    probe_wait_ms: int = Field(300, ge=0)
+    """Bir tuş ya da tıklamadan sonra etkisini gözlemek için beklenecek süre."""
+
+    modal_focus_wait_ms: int = Field(500, ge=0)
+    """Modal açıldıktan sonra odağın içeri taşınması için beklenecek süre (KLV-08)."""
+
+    modal_min_cover: float = Field(0.3, gt=0, le=1)
+    """Rolü olmayan sabit bir katmanın modal sayılması için görünüm alanını kaplama oranı."""
+
+    skip_link_min_stops: int = Field(5, ge=1)
+    """``main`` öncesinde bu kadar durak varsa atla bağlantısı beklenir (KLV-09)."""
+
+    evidence_max_steps: int = Field(20, ge=1)
+    """Bulgu kanıtında saklanan en fazla adım (KLV-10)."""
+
+    review_threshold: float = Field(0.8, ge=0, le=1)
+    """Bu güvenin altındaki bulgular ``needs_review`` olur."""
+
+    low_confidence: float = Field(0.6, ge=0, le=1)
+    """Sezgisel kanıta dayanan bulguların güveni (ör. rolü olmayan modal)."""
+
+    severity: dict[KeyboardCheck, Severity] = Field(default_factory=_default_keyboard_severity)
+    confidence: dict[KeyboardCheck, float] = Field(default_factory=_default_keyboard_confidence)
+
+    @field_validator("severity")
+    @classmethod
+    def _severity_complete(cls, value: dict[str, Severity]) -> dict[str, Severity]:
+        missing = set(KEYBOARD_CHECKS) - value.keys()
+        if missing:
+            raise ValueError(f"keyboard.severity eksik denetimler: {sorted(missing)}")
+        if value["keyboard_trap"] != "critical":
+            raise ValueError("klavye tuzağı 'critical' olmalıdır (PUA-03)")
+        return value
+
+    @field_validator("confidence")
+    @classmethod
+    def _confidence_complete(cls, value: dict[str, float]) -> dict[str, float]:
+        missing = set(KEYBOARD_CHECKS) - value.keys()
+        if missing:
+            raise ValueError(f"keyboard.confidence eksik denetimler: {sorted(missing)}")
+        bad = sorted(k for k, v in value.items() if not 0 <= v <= 1)
+        if bad:
+            raise ValueError(f"keyboard.confidence 0–1 arasında olmalı: {bad}")
+        return value
+
+
 class ScoringConfig(_Strict):
     """Puanlama parametreleri (SRS §7.2, PUA-02). Faz 3'te kullanılır."""
 
@@ -124,6 +265,7 @@ class YankiConfig(_Strict):
 
     scan: ScanConfig = Field(default_factory=ScanConfig)
     rules: RulesConfig = Field(default_factory=RulesConfig)
+    keyboard: KeyboardConfig = Field(default_factory=KeyboardConfig)
     scoring: ScoringConfig = Field(default_factory=ScoringConfig)
 
 

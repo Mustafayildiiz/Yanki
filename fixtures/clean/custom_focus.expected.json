@@ -1,0 +1,6 @@
+{
+  "page": "custom_focus.html",
+  "description": "Set C temiz referans sayfa: kesin klavye ya da kural bulgusu beklenmez (NFR-05).",
+  "expected": [],
+  "allowed_review": []
+}

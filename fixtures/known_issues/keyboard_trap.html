@@ -1,0 +1,46 @@
+<!doctype html>
+<!-- Set B (KLV-05, NFR-04): iki klavye tuzağı.
+     1. #editor: Tab, son düğmeden ilk düğmeye döner (ileri yönde tuzak).
+     2. #tagbox: Shift+Tab, ilk alandan ikinci alana döner (yalnızca geri yönde tuzak).
+     axe-core bu hataları göremez: sayfa statik olarak kurallara uygundur. -->
+<html lang="tr">
+<head>
+  <meta charset="utf-8">
+  <title>Klavye tuzağı</title>
+  <style>
+    body { font-family: sans-serif; margin: 2rem; color: #222; background: #fff; }
+    #editor, #tagbox { display: flex; gap: .5rem; margin: 1rem 0; }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Yorum yaz</h1>
+    <p><a id="before" href="#kurallar">Yorum kuralları</a></p>
+    <div id="editor" role="toolbar" aria-label="Biçimlendirme">
+      <button id="t-bold" type="button">Kalın</button>
+      <button id="t-italic" type="button">İtalik</button>
+      <button id="t-link" type="button">Bağlantı</button>
+    </div>
+    <p><a id="after" href="#onizleme">Önizleme</a></p>
+    <div id="tagbox">
+      <input id="tag-a" type="text" aria-label="Birinci etiket">
+      <input id="tag-b" type="text" aria-label="İkinci etiket">
+    </div>
+    <p><a id="last" href="#gonder">Gönderim ayrıntıları</a></p>
+  </main>
+  <script>
+    const bold = document.getElementById('t-bold');
+    const link = document.getElementById('t-link');
+    document.getElementById('editor').addEventListener('keydown', (e) => {
+      if (e.key !== 'Tab') return;
+      if (!e.shiftKey && e.target === link) { e.preventDefault(); bold.focus(); }
+      if (e.shiftKey && e.target === bold) { e.preventDefault(); link.focus(); }
+    });
+    const tagA = document.getElementById('tag-a');
+    const tagB = document.getElementById('tag-b');
+    tagA.addEventListener('keydown', (e) => {
+      if (e.key === 'Tab' && e.shiftKey) { e.preventDefault(); tagB.focus(); }
+    });
+  </script>
+</body>
+</html>

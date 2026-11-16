@@ -20,8 +20,14 @@ Hedef kitle profesyonellerdir. Bu yüzden her bulgu kanıt, güven skoru ve WCAG
 
 ## Mevcut durum
 
-- **Faz 0 (iskelet) tamamlandı; sıradaki Faz 1 (klavye modülü).** `yanki scan <hedef>` Playwright + axe-core ile tarar ve JSON rapor üretir.
-- Faz 0 test sayfaları `tests/pages/` altındadır. `fixtures/known_issues` ve `fixtures/clean` (Set B/C) Faz 1'de ölçüm için ayrıca yazılır; Faz 0 sayfalarını oraya taşıma.
+- **Faz 1 (klavye modülü) tamamlandı; sıradaki Faz 2 (alt metin).** `yanki scan <hedef>` Playwright + axe-core ile tarar, ardından klavye testini (`yanki/core/keyboard/`) çalıştırır ve JSON rapor üretir.
+- Faz 0 test sayfaları `tests/pages/` altındadır. Set B `fixtures/known_issues/` (8 sayfa), Set C `fixtures/clean/` (4 sayfa) altındadır; her sayfanın yanında `*.expected.json` vardır. Eşleme anahtarı `(rule, evidence.check, selector)`. Ölçüm: `python experiments/keyboard_eval.py` (Faz 1 sonu: Set B duyarlılık 21/21, Set C kesin yanlış alarm 0).
+- **Klavye modülü** taramada en son çalışır (sayfayı değiştirir). Sayfa yalnızca durum kirlendiyse `scan._navigate` ile, yani aynı proxy denetiminden geçerek yeniden yüklenir. Hatalar taramayı durdurmaz; uyarı + kısmi `keyboard` raporu olur (NFR-16).
+  - **Etkinleştirme politikası temkinlidir (kullanıcı kararı):** form içindeki kontroller, submit/reset düğmeleri ve gerçek `href` bağlantılar asla etkinleştirilmez; sonda sınırı `max_probes`.
+  - **Kanıt (KLV-10):** her klavye bulgusunda `evidence.steps` ve `evidence.screenshot` vardır. PNG'ler `ScanReport.artifacts` içinde tutulur (JSON'a girmez), içerik karmasıyla adlandırılır (`evidence/<sha16>.png`); CLI `-o` raporunun yanına yazar, stdout'ta uyarı verir.
+  - **NFR-05 tanımı (kullanıcı kararı):** yanlış alarm = temiz sayfadaki `needs_review=false` klavye bulgusu; oran = yanlış alarm ÷ sekme durağı. "Elle incele" bulguları ayrı raporlanır.
+  - Odak göstergesi (KLV-03) yeni bağımlılık olmadan, stdlib PNG çözücüyle (`keyboard/png.py`) odaklı/odaksız kırpım farkıyla ölçülür.
+- **Bilinen sınırlar (Faz 1):** başka kökenli iframe'in içi gezilemez (odak orada tek adım sayılır); klavye JS'i de sayfanın ana dünyasında çalışır; "etki" DOM değişimi, gezinme ya da yeni dialog ile ölçülür (canvas gibi DOM'suz etkiler kaçabilir; kendiliğinden değişen sayfalarda mutasyon sinyali kapatılır); KLV-06 adayları `onclick`, kendinden başlayan `cursor:pointer` ya da etkileşimli rol ile seçilir, CDP dinleyici sorgusu kullanılmaz; temkinli politika form içindeki modal tetikleyicilerini test etmez.
 - **Ağ koruması (NFR-08):** Chromium'un tüm trafiği `yanki/core/netguard.py` içindeki süreç içi proxy'den geçer. Proxy her bağlantıda adı kendisi çözer ve doğruladığı IP'ye bağlanır. `page.route` yönlendirme adımlarını yakalamadığı için politika için kullanılmaz.
 - **Çekirdek async'tir** (`run_scan`). Klavye modülü aynı `Page` nesnesi üzerinde async çalışmalıdır.
 - **CI** (`.github/workflows/ci.yml`) yalnızca `main`'e push'ta ve pull request'te çalışır; dal push'u tek başına tetiklemez. Faz 0 PR'ında docker işi ile Ubuntu, Windows ve macOS işleri geçti (NFR-11 kanıtlandı). `gh` kurulu değildir; CI durumu GitHub REST API ile (`curl`) sorgulanır.
@@ -185,3 +191,5 @@ Windows'ta Git Bash, `/app` gibi konteyner yollarını dönüştürür. Bu yüzd
 5. axe `incomplete` sonuçları "elle incele" bulguları olarak (`needs_review`) raporlansın mı? Şimdilik yalnızca sayıları yazılıyor.
 6. Hız sınırı ve robots.txt (README'de "planlanıyor") hangi fazda uygulanacak?
 7. SRS'teki `rule` alanı kural bulgularında axe kimliği mi, gereksinim numarası mı olmalı? Şimdilik axe kimliği.
+8. KLV-08 "Escape kapatmıyor" bulgusu APG desenine dayanır; WCAG'de doğrudan karşılığı yoktur. Şimdilik 2.1.1 ile eşlendi.
+9. Klavye ciddiyet ve güven başlangıç değerleri (`KeyboardConfig.severity` / `confidence`; tuzak, odaklanamaz ve etkinleşmez öğe `critical`) danışmanla kalibre edilmeli. KLV-04 sapmasının seçicisi sıçramanın *vardığı* öğedir (pozitif tabindex'te suçlu olan önceki öğe `evidence.previous`'tadır).

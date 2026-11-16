@@ -76,8 +76,16 @@ def test_rule_findings_cannot_look_like_ai_findings() -> None:
 
 
 def test_evidence_allows_module_specific_fields() -> None:
-    ev = Evidence.model_validate({"steps": ["Tab", "Tab"], "alt": "x"})
-    assert ev.model_dump()["steps"] == ["Tab", "Tab"]
+    ev = Evidence.model_validate({"cycle": ["#a", "#b"], "alt": "x"})
+    assert ev.model_dump()["cycle"] == ["#a", "#b"]
+
+
+def test_keyboard_steps_are_typed() -> None:
+    # KLV-10: adım dizisi tiplidir (tuş, odaklı öğe).
+    ev = Evidence.model_validate({"check": "keyboard_trap", "steps": [{"n": 1, "key": "Tab"}]})
+    assert ev.steps is not None and ev.steps[0].key == "Tab" and ev.steps[0].selector is None
+    with pytest.raises(ValidationError):
+        Evidence.model_validate({"steps": ["Tab"]})
 
 
 def test_finalize_findings_is_deterministic() -> None:

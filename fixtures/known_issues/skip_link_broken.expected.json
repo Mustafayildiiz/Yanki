@@ -1,0 +1,8 @@
+{
+  "page": "skip_link_broken.html",
+  "description": "Atla bağlantısı etkinleştirilince odak ana içeriğe geçmiyor (preventDefault).",
+  "expected": [
+    {"type": "keyboard", "rule": "KLV-09", "check": "skip_link_broken", "selector": "#skip", "severity": "moderate", "needs_review": false}
+  ],
+  "allowed_review": []
+}

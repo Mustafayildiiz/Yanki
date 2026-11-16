@@ -1,0 +1,10 @@
+{
+  "page": "modal_broken.html",
+  "description": "Odak içeri taşınmıyor, Tab dışarı kaçıyor, Escape kapatmıyor. Escape kapatmadığı için 'odak geri döner' denetimi atlanır.",
+  "expected": [
+    {"type": "keyboard", "rule": "KLV-08", "check": "modal_focus_not_moved", "selector": "#settings", "severity": "important", "needs_review": false},
+    {"type": "keyboard", "rule": "KLV-08", "check": "modal_focus_escapes", "selector": "#settings", "severity": "important", "needs_review": false},
+    {"type": "keyboard", "rule": "KLV-08", "check": "modal_escape_not_closing", "selector": "#settings", "severity": "moderate", "needs_review": false}
+  ],
+  "allowed_review": []
+}

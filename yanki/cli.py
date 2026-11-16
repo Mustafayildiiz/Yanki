@@ -21,6 +21,8 @@ from pydantic import ValidationError
 
 from yanki import __version__
 from yanki.config import YankiConfig, load_config
+from yanki.core.alttext import download_models
+from yanki.core.alttext.backend import BackendUnavailable
 from yanki.core.errors import ScanError, TargetError
 from yanki.core.evidence import save_evidence
 from yanki.core.scan import run_scan
@@ -167,11 +169,40 @@ def scan(
         except (OSError, ValueError) as exc:
             typer.echo(f"Uyarı: kanıt görüntüleri yazılamadı: {exc}", err=True)
         keyboard = sum(1 for f in report.findings if f.type == "keyboard")
+        alt = sum(1 for f in report.findings if f.type == "alt_text")
         typer.echo(
-            f"{len(report.findings)} bulgu ({keyboard} klavye), {len(report.elements)} öğe. "
-            f"Rapor: {output}",
+            f"{len(report.findings)} bulgu ({keyboard} klavye, {alt} alt metin), "
+            f"{len(report.elements)} öğe. Rapor: {output}",
             err=True,
         )
+
+
+models_app = typer.Typer(help="Alt metin modelleri (Faz 2).", no_args_is_help=True)
+app.add_typer(models_app, name="models")
+
+
+@models_app.command("download")
+def models_download(
+    config_path: Annotated[
+        Path | None, typer.Option("--config", "-c", help="TOML yapılandırma dosyası.")
+    ] = None,
+) -> None:
+    """Yapılandırmadaki modelleri sabit revizyonlarıyla indirir (NFR-07: yalnızca ağırlık).
+
+    İndirme yeri ``YANKI_MODELS_DIR`` ya da ``HF_HOME`` (Docker'da ``/models``).
+    """
+    try:
+        config = load_config(config_path) if config_path else YankiConfig()
+    except (OSError, ValueError, ValidationError) as exc:
+        raise _fail(ExitCode.USAGE, f"Yapılandırma okunamadı: {exc}") from exc
+    try:
+        done = download_models(config)
+    except BackendUnavailable as exc:
+        raise _fail(ExitCode.USAGE, str(exc)) from exc
+    except Exception as exc:
+        raise _fail(ExitCode.SCAN_FAILED, f"Model indirilemedi: {exc}") from exc
+    for ref in done:
+        typer.echo(ref)
 
 
 if __name__ == "__main__":  # pragma: no cover

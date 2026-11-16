@@ -16,7 +16,7 @@ import tomllib
 from pathlib import Path
 from typing import Literal, get_args
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 Severity = Literal["critical", "important", "moderate", "low"]
 
@@ -231,6 +231,270 @@ class KeyboardConfig(_Strict):
         return value
 
 
+AltCheck = Literal[
+    "missing",
+    "generic_text",
+    "insufficient",
+    "mismatch",
+    "vague_name",
+    "lang_mismatch",
+]
+"""Alt metin modülünün denetim türleri (``evidence.check``)."""
+
+ALT_CHECKS: tuple[str, ...] = get_args(AltCheck)
+
+AltRuleCheck = Literal["missing", "generic_text", "vague_name", "lang_mismatch"]
+"""Kural tabanlı (model gerektirmeyen) alt metin denetimleri."""
+
+
+class ModelRef(_Strict):
+    """Hugging Face model kimliği ve sabit revizyonu (commit SHA; NFR-06, NFR-15)."""
+
+    id: str = Field(min_length=1)
+    revision: str = Field(min_length=1)
+
+    def ref(self) -> str:
+        return f"{self.id}@{self.revision}"
+
+
+class AltTextModels(_Strict):
+    """Alt metin hattının modelleri (SRS §3.1, §8.3).
+
+    Varsayılanlar SRS'teki varsayılan adaylardır; seçim Set A üzerinde
+    §8.3 protokolüyle yapılacaktır. Model değiştirmek kod değişikliği
+    gerektirmez (NFR-13): ``captioner`` BLIP ya da BLIP-2, ``translator``
+    herhangi bir MarianMT modeli (ör. ``opus-mt-tc-big-tr-en``), ``embedder``
+    E5 ailesinden bir model olabilir.
+    """
+
+    captioner: ModelRef = Field(
+        default_factory=lambda: ModelRef(
+            id="Salesforce/blip-image-captioning-base",
+            revision="82a37760796d32b1411fe092ab5d4e227313294b",
+        )
+    )
+    translator: ModelRef = Field(
+        default_factory=lambda: ModelRef(
+            id="Helsinki-NLP/opus-mt-tr-en",
+            revision="19c65427cc2af5f191337d4899e0348c4af25902",
+        )
+    )
+    embedder: ModelRef = Field(
+        default_factory=lambda: ModelRef(
+            id="intfloat/multilingual-e5-small",
+            revision="614241f622f53c4eeff9890bdc4f31cfecc418b3",
+        )
+    )
+    clip: ModelRef = Field(
+        default_factory=lambda: ModelRef(
+            id="openai/clip-vit-base-patch32",
+            revision="3d74acf9a28c67741b2f4f2ea7635f0aaf6f0268",
+        )
+    )
+    clip_multilingual: ModelRef = Field(
+        default_factory=lambda: ModelRef(
+            id="sentence-transformers/clip-ViT-B-32-multilingual-v1",
+            revision="58edf8cada9e398793dca955574a48cbb7f18be2",
+        )
+    )
+    """Yalnızca ``approach = "multilingual"`` iken kullanılan çok dilli metin kodlayıcı.
+    Görsel tarafı ``clip`` modelinin görsel kodlayıcısıdır."""
+
+
+def _default_alt_severity() -> dict[str, Severity]:
+    return {
+        "missing": "critical",
+        "generic_text": "important",
+        "mismatch": "important",
+        "insufficient": "moderate",
+        "vague_name": "low",
+        "lang_mismatch": "low",
+    }
+
+
+def _default_alt_rule_confidence() -> dict[str, float]:
+    return {
+        "missing": 1.0,
+        "generic_text": 0.95,
+        # Bağlam WCAG 2.4.4'ü karşılayabilir; sezgisel dil tespiti. Her zaman "elle incele".
+        "vague_name": 0.5,
+        "lang_mismatch": 0.5,
+    }
+
+
+def _default_generic_words() -> list[str]:
+    return [
+        # Türkçe
+        "resim", "foto", "fotoğraf", "fotograf", "görsel", "gorsel", "görüntü", "imaj",
+        "grafik", "simge", "ikon", "logo", "afiş", "banner", "adsız", "başlıksız", "boş",
+        # İngilizce
+        "image", "img", "photo", "picture", "pic", "graphic", "icon", "untitled",
+        "placeholder", "spacer", "blank", "thumbnail", "screenshot",
+    ]  # fmt: skip
+
+
+def _default_vague_names() -> list[str]:
+    return [
+        # Türkçe
+        "tıklayın", "tıkla", "tıklayınız", "buraya", "burada", "buraya tıklayın",
+        "buraya tıklayınız", "devam", "devamı", "devamını oku", "devamını okuyun",
+        "daha fazla", "daha fazlası", "detay", "detaylar", "ayrıntı", "ayrıntılar",
+        "incele", "git", "bağlantı", "link", "tamamı",
+        # İngilizce
+        "click", "click here", "here", "more", "read more", "learn more", "continue",
+        "details",
+    ]  # fmt: skip
+
+
+def _default_review_caption_keywords() -> list[str]:
+    # Açıklama modelinin tasarım gereği zayıf olduğu içerikler: metin, grafik, logo.
+    return [
+        "text", "sign", "chart", "graph", "diagram", "screenshot", "logo", "poster",
+        "cover", "magazine", "newspaper", "book", "map", "document", "illustration",
+        "drawing", "cartoon", "menu", "label", "icon", "letter", "words",
+    ]  # fmt: skip
+
+
+def _default_stopwords() -> dict[str, list[str]]:
+    return {
+        "tr": [
+            "ve", "bir", "ile", "bu", "şu", "için", "olan", "gibi", "çok", "daha",
+            "veya", "ya", "da", "de", "ki", "ne", "üzerinde", "önünde", "yanında",
+            "arasında", "içinde", "altında", "üstünde",
+        ],
+        "en": [
+            "the", "a", "an", "of", "with", "and", "on", "in", "at", "is", "are", "to",
+            "for", "from", "by", "next", "near", "its", "his", "her", "their", "this",
+            "that", "lying", "standing", "sitting",
+        ],
+    }  # fmt: skip
+
+
+class AltTextConfig(_Strict):
+    """Alt metin ve içerik analizi ayarları (ALT-01..12, NFR-01, NFR-12, NFR-13).
+
+    Eşikler, ağırlıklar ve aralıklar **kalibre edilmemiş başlangıç değerleridir**;
+    Set A hazır olduğunda SRS §8.3 protokolüyle belirlenecektir (NFR-03).
+    """
+
+    enabled: bool = True
+
+    backend: Literal["transformers", "fake"] = "transformers"
+    """Model arka ucu. ``fake``: belirlenimci sahte arka uç (yalnızca test ve
+    geliştirme; doğruluk ölçümünde kullanılmaz)."""
+
+    approach: Literal["translate", "multilingual"] = "translate"
+    """ALT-04: ``translate`` alt metni önce İngilizceye çevirir, standart CLIP
+    kullanır; ``multilingual`` çeviri yapmaz, çok dilli CLIP metin kodlayıcısı
+    kullanır. E5 her iki yolda da çok dillidir."""
+
+    models: AltTextModels = Field(default_factory=AltTextModels)
+
+    allow_download: bool = False
+    """Model ağırlıkları yerelde yoksa tarama sırasında indirilsin mi. Kapalıyken
+    eksik ağırlık "analiz edilemedi" olur; indirme ``yanki models download`` ile
+    yapılır. Ağa yalnızca model ağırlıkları için çıkılır (NFR-07)."""
+
+    cache: bool = True
+    """Aynı görsel ve metin için sonuçlar önbellekten gelir (ALT-09)."""
+
+    cache_dir: str | None = None
+    """Önbellek dizini. ``None``: ``YANKI_CACHE_DIR`` ortam değişkeni ya da
+    çalışma dizinindeki ``.yanki/cache``. Silmek için dizinin silinmesi yeterlidir."""
+
+    default_lang: str = "tr"
+    """Sayfa ve öğe ``lang`` bildirmiyorsa varsayılan dil."""
+
+    translate_languages: list[str] = Field(default_factory=lambda: ["tr"])
+    """Çeviri modelinin kaynak dilleri. İngilizce olmayan ve burada bulunmayan
+    dillerde ``translate`` yolu görseli "atlandı" olarak işaretler."""
+
+    max_images: int = Field(100, ge=0)
+    """Model ile analiz edilecek en fazla görsel (belge sırasıyla)."""
+
+    max_image_bytes: int = Field(10_000_000, gt=0)
+    max_pixels: int = Field(40_000_000, gt=0)
+    """Çözülecek en büyük görsel (bayt ve piksel; bellek ve sıkıştırma bombası koruması)."""
+
+    min_size_px: int = Field(24, ge=1)
+    """Görünür genişlik ya da yüksekliği bunun altındaki görseller model analizine girmez."""
+
+    screenshot_timeout_ms: int = Field(5_000, gt=0)
+    evidence_thumbnail_px: int = Field(512, ge=64)
+
+    caption_max_tokens: int = Field(30, ge=5)
+    translate_num_beams: int = Field(4, ge=1)
+    e5_prefix: str = "query: "
+    batch_size: int = Field(8, ge=1)
+    num_threads: int | None = Field(None, ge=1)
+    """torch iş parçacığı sayısı. ``None``: torch varsayılanı."""
+
+    e5_range: tuple[float, float] = (0.70, 0.90)
+    """E5 kosinüs benzerliğinin 0–1'e eşlendiği aralık. E5 benzerlikleri dar
+    bir bantta toplanır (ilgisiz ≈0,70, ilgili ≈0,86)."""
+
+    clip_range: tuple[float, float] = (0.15, 0.32)
+    """CLIP kosinüs benzerliğinin 0–1'e eşlendiği aralık."""
+
+    e5_weight: float = Field(0.7, ge=0)
+    clip_weight: float = Field(0.3, ge=0)
+    """Uyum skoru = ağırlıklı ortalama; E5 ana sinyal, CLIP ek sinyal (ALT-04)."""
+
+    ok_threshold: float = Field(0.55, ge=0, le=1)
+    mismatch_threshold: float = Field(0.30, ge=0, le=1)
+    """Sınıf eşikleri (ALT-06): skor ≥ ok → uygun; ≥ mismatch → yetersiz; altı → uyumsuz."""
+
+    confidence_margin: float = Field(0.2, gt=0)
+    """Skorun en yakın eşiğe uzaklığı bu değere ulaştığında güven 1 olur."""
+
+    review_threshold: float = Field(0.7, ge=0, le=1)
+    """Bu güvenin altındaki bulgular ``needs_review`` olur (ALT-08)."""
+
+    functional_image_review: bool = True
+    """Bağlantı ya da düğme içindeki görsellerin alt metni işlevi anlatır; model
+    bulguları en fazla "elle incele" olur."""
+
+    review_caption_keywords: list[str] = Field(default_factory=_default_review_caption_keywords)
+    """Açıklamada bu sözcükler geçerse (metin, grafik, logo …) model bulgusu en fazla
+    "elle incele" olur."""
+
+    generic_words: list[str] = Field(default_factory=_default_generic_words)
+    image_extensions: list[str] = Field(
+        default_factory=lambda: "png jpg jpeg gif webp svg bmp tif tiff avif heic ico".split()
+    )
+    vague_names: list[str] = Field(default_factory=_default_vague_names)
+    stopwords: dict[str, list[str]] = Field(default_factory=_default_stopwords)
+    lang_min_words: int = Field(3, ge=1)
+    """Dil tespiti (ALT-12) için en az sözcük sayısı."""
+
+    severity: dict[AltCheck, Severity] = Field(default_factory=_default_alt_severity)
+    rule_confidence: dict[AltRuleCheck, float] = Field(default_factory=_default_alt_rule_confidence)
+    """Kural tabanlı alt metin bulgularının güveni (CLAUDE.md §9)."""
+
+    @field_validator("severity")
+    @classmethod
+    def _alt_severity_complete(cls, value: dict[str, Severity]) -> dict[str, Severity]:
+        missing = set(ALT_CHECKS) - value.keys()
+        if missing:
+            raise ValueError(f"alt_text.severity eksik denetimler: {sorted(missing)}")
+        return value
+
+    @field_validator("e5_range", "clip_range")
+    @classmethod
+    def _range_ordered(cls, value: tuple[float, float]) -> tuple[float, float]:
+        if not value[0] < value[1]:
+            raise ValueError("aralığın alt sınırı üst sınırından küçük olmalı")
+        return value
+
+    @model_validator(mode="after")
+    def _thresholds_ordered(self) -> AltTextConfig:
+        if self.mismatch_threshold > self.ok_threshold:
+            raise ValueError("mismatch_threshold, ok_threshold'dan büyük olamaz")
+        if self.e5_weight + self.clip_weight <= 0:
+            raise ValueError("e5_weight + clip_weight pozitif olmalı")
+        return self
+
+
 class ScoringConfig(_Strict):
     """Puanlama parametreleri (SRS §7.2, PUA-02). Faz 3'te kullanılır."""
 
@@ -261,11 +525,13 @@ class YankiConfig(_Strict):
     """Rastgelelik tohumu; rapora yazılır (NFR-06, KAR-05)."""
 
     device: Literal["cpu", "cuda"] = Field(default_factory=_default_device)
-    """Model çıkarım aygıtı (NFR-12). Faz 2'de kullanılır."""
+    """Model çıkarım aygıtı (NFR-12). ``cuda`` seçili ama GPU yoksa CPU kullanılır
+    ve uyarı yazılır."""
 
     scan: ScanConfig = Field(default_factory=ScanConfig)
     rules: RulesConfig = Field(default_factory=RulesConfig)
     keyboard: KeyboardConfig = Field(default_factory=KeyboardConfig)
+    alt_text: AltTextConfig = Field(default_factory=AltTextConfig)
     scoring: ScoringConfig = Field(default_factory=ScoringConfig)
 
 

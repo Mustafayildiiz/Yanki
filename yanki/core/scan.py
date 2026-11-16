@@ -7,9 +7,13 @@ Akış:
 3. Kalıcı olmayan, yalıtılmış bir tarayıcı bağlamında sayfa açılır.
 4. ``load`` beklenir, ardından ağın durulması sınırlı süre beklenir (TAR-02).
 5. axe-core enjekte edilir, öğeler toplanır (TAR-03), kurallar çalıştırılır.
-6. Klavye testi en son çalışır (KLV-01..10); sayfanın durumunu değiştirdiği
-   için axe ve öğe toplamadan sonra gelir. Sayfayı yeniden yüklemesi gerekirse
-   bu, aynı proxy denetiminden geçen ``_navigate`` ile yapılır.
+6. Alt metin modülünün görsel baytları, sayfanın yükleme sırasında aldığı
+   yanıtlardan toplanır (yeni istek yok; ALT-09, ALT-10, NFR-08).
+7. Klavye testi sayfada en son çalışır (KLV-01..10); sayfanın durumunu
+   değiştirdiği için axe, öğe ve görsel toplamadan sonra gelir. Sayfayı yeniden
+   yüklemesi gerekirse bu, aynı proxy denetiminden geçen ``_navigate`` ile yapılır.
+8. Tarayıcı kapandıktan sonra alt metin analizi (model çıkarımı) ayrı bir iş
+   parçacığında çalışır (ALT-01..12).
 
 Çekirdek async'tir. Faz 1'deki klavye modülü ve Faz 4'teki FastAPI aynı
 olay döngüsü modelini kullanır; ``scan()`` eşzamanlı çağıranlar içindir.
@@ -30,13 +34,17 @@ from playwright.async_api import TimeoutError as PlaywrightTimeoutError
 
 from yanki import __version__
 from yanki.config import YankiConfig
+from yanki.core.alttext import AltTextResult, CollectedImages, analyze, collect_images
+from yanki.core.alttext.images import ImageCapture
 from yanki.core.collect import collect_elements
 from yanki.core.errors import ScanError, TargetError
 from yanki.core.keyboard import KeyboardResult, run_keyboard
 from yanki.core.netguard import GuardProxy, NetworkPolicy
 from yanki.core.rules import inject_axe, run_axe
 from yanki.core.schema import (
+    AltTextReport,
     BlockedRequest,
+    PageElement,
     PageInfo,
     ScanReport,
     ToolVersions,
@@ -118,6 +126,9 @@ async def run_scan(
                     accept_downloads=False,
                 )
                 page = await context.new_page()
+                # Görsel yanıtları gezinmeden önce dinlenir; alt metin modülü baytları
+                # yeni istek yapmadan bu yanıtlardan alır (NFR-08).
+                capture = ImageCapture(page) if config.alt_text.enabled else None
                 response = await _navigate(page, tgt, config, proxy, warnings)
 
                 frame_warnings = await _safe(inject_axe(page), "axe-core enjekte edilemedi")
@@ -142,6 +153,9 @@ async def run_scan(
                     title=await page.title(),
                     lang=await page.evaluate("document.documentElement.getAttribute('lang')"),
                 )
+                collected: CollectedImages | None = None
+                if capture is not None:
+                    collected = await _collect_images(page, elements, capture, config, page_info)
                 keyboard: KeyboardResult | None = None
                 if config.keyboard.enabled:
                     keyboard = await _run_keyboard(page, tgt, config, proxy)
@@ -152,12 +166,25 @@ async def run_scan(
     finally:
         await proxy.close()
 
+    # Alt metin analizi tarayıcı kapandıktan sonra, olay döngüsünün dışında çalışır;
+    # klavye testinin zamanlama ve piksel ölçümleri CPU yarışından etkilenmez.
+    alt: AltTextResult | None = None
+    if collected is not None:
+        alt = await _analyze_alt_text(elements, collected, config, page_info.lang)
+        warnings.extend(alt.warnings)
+
+    artifacts = dict(keyboard.artifacts) if keyboard else {}
+    if alt:
+        artifacts.update(alt.artifacts)
     return ScanReport(
         tool=ToolVersions(
             yanki=__version__,
             axe_core=axe_version,
             playwright=dist_version("playwright"),
             browser=f"chromium {browser_version}",
+            torch=alt.libraries.get("torch") if alt else None,
+            transformers=alt.libraries.get("transformers") if alt else None,
+            models=alt.models if alt else {},
         ),
         page=page_info,
         started_at=started_at,
@@ -165,16 +192,54 @@ async def run_scan(
         seed=config.seed,
         config=config.model_dump(mode="json"),
         elements=elements,
-        findings=finalize_findings(findings + (keyboard.findings if keyboard else [])),
+        findings=finalize_findings(
+            findings + (keyboard.findings if keyboard else []) + (alt.findings if alt else [])
+        ),
         rules_summary=rules_summary,
         keyboard=keyboard.report if keyboard else None,
+        alt_text=alt.report if alt else None,
         blocked_requests=[
             BlockedRequest(host=host, port=port, reason=reason)
             for host, port, reason in sorted({(b.host, b.port, b.reason) for b in proxy.blocked})
         ],
         warnings=warnings,
-        artifacts=keyboard.artifacts if keyboard else {},
+        artifacts=artifacts,
     )
+
+
+async def _collect_images(
+    page: Page,
+    elements: list[PageElement],
+    capture: ImageCapture,
+    config: YankiConfig,
+    page_info: PageInfo,
+) -> CollectedImages:
+    """Alt metin modülünün tarayıcı aşaması; hata taramayı durdurmaz (NFR-16)."""
+    try:
+        return await collect_images(page, elements, capture, config.alt_text, page_info.lang)
+    except Exception as exc:
+        return CollectedImages(
+            warnings=[f"Alt metin görselleri toplanamadı: {type(exc).__name__}: {exc}"]
+        )
+    finally:
+        capture.detach()
+
+
+async def _analyze_alt_text(
+    elements: list[PageElement],
+    collected: CollectedImages,
+    config: YankiConfig,
+    page_lang: str | None,
+) -> AltTextResult:
+    try:
+        return await asyncio.to_thread(analyze, elements, collected, config, page_lang=page_lang)
+    except Exception as exc:  # NFR-16: modül hatası taramayı durdurmaz
+        return AltTextResult(
+            report=AltTextReport(
+                backend=config.alt_text.backend, approach=config.alt_text.approach
+            ),
+            warnings=[f"Alt metin analizi tamamlanamadı: {type(exc).__name__}: {exc}"],
+        )
 
 
 async def _run_keyboard(

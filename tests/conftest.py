@@ -23,9 +23,27 @@ import pytest
 from yanki.core.netguard import NetworkPolicy
 
 PAGES = Path(__file__).parent / "pages"
+IMAGES = Path(__file__).resolve().parents[1] / "fixtures" / "images"
 
 ALLOWED_IP = "127.0.0.1"
 FORBIDDEN_IP = "127.0.0.2"
+
+
+@pytest.fixture(autouse=True)
+def _hermetic_models(
+    request: pytest.FixtureRequest,
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path_factory: pytest.TempPathFactory,
+) -> None:
+    """``models`` işareti olmayan testlerde model ağırlıkları yokmuş gibi davranılır.
+
+    Geliştirme makinesinde ``/models`` volume'ünde ağırlık bulunsa da varsayılan
+    testler CI'daki ağırlıksız ortamı görür; doğruluk gerçek modellerle yalnızca
+    ``-m models`` ve ``experiments/`` ile ölçülür. Önbellek de depoya yazılmaz.
+    """
+    monkeypatch.setenv("YANKI_CACHE_DIR", str(tmp_path_factory.mktemp("alt-cache")))
+    if request.node.get_closest_marker("models") is None:
+        monkeypatch.setenv("YANKI_MODELS_DIR", str(tmp_path_factory.mktemp("no-models")))
 
 
 def forbid_only_127_0_0_2(ip: ipaddress.IPv4Address | ipaddress.IPv6Address) -> bool:
@@ -119,6 +137,28 @@ def _make_handler(state: LocalServer) -> type[BaseHTTPRequestHandler]:
                         "</main></html>"
                     ).encode(),
                 )
+            elif path == "/alt.html":
+                # Alt metin modülü (NFR-08): görsel baytları yalnızca sayfanın kendi
+                # yanıtlarından alınır; yasak adrese giden görsel analiz edilemez.
+                evil = f"http://{FORBIDDEN_IP}:{state.port}"
+                ok = f"http://{ALLOWED_IP}:{state.port}"
+                size = "width='160' height='120'"
+                self._send(
+                    200,
+                    (
+                        "<!doctype html><html lang='tr'><title>Alt metin</title><main>"
+                        "<h1>Görseller</h1>"
+                        f"<img id='direct' src='{evil}/evil/alt-direct.jpg' {size}"
+                        " alt='Kent müzesinin giriş kapısı'>"
+                        f"<img id='redirected' src='{ok}/redirect?to={evil}/evil/alt-redir.jpg'"
+                        f" {size} alt='Gölde kano yapan iki kişi'>"
+                        f"<img id='allowed' src='{ok}/img/car.jpg' {size}"
+                        " alt='Arnavut kaldırımlı sokakta kırmızı bir araba'>"
+                        "</main></html>"
+                    ).encode(),
+                )
+            elif path == "/img/car.jpg":
+                self._send(200, (IMAGES / "red_car.jpg").read_bytes(), "image/jpeg")
             elif path.startswith("/evil") or path == "/ok.png":
                 self._send(200, b"", "image/png")
             else:

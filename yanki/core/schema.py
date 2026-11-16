@@ -12,7 +12,7 @@ from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
-SCHEMA_VERSION = "0.2.0"
+SCHEMA_VERSION = "0.3.0"
 
 FindingType = Literal["rule", "alt_text", "keyboard"]
 Severity = Literal["critical", "important", "moderate", "low"]
@@ -54,11 +54,25 @@ class Evidence(BaseModel):
 
     model_config = ConfigDict(extra="allow")
 
-    # Alt metin modülü (Faz 2)
+    # Alt metin modülü (ALT-01..12)
     alt: str | None = None
+    """Özgün alt metin ya da görselin metin alternatifi (aria-label vb.)."""
     alt_translated: str | None = None
+    """İngilizceye çevrilmiş alt metin (ALT-04). Çeviri yapılmadıysa ``None``."""
     caption: str | None = None
+    """Görsel açıklama modelinin ürettiği açıklama (ALT-05)."""
     similarity: float | None = Field(None, ge=0, le=1)
+    """Birleşik görsel–metin uyum skoru (ALT-03)."""
+    e5: float | None = Field(None, ge=0, le=1)
+    """Açıklama ile alt metin arasındaki E5 benzerliği, 0–1'e eşlenmiş (ana sinyal)."""
+    clip: float | None = Field(None, ge=0, le=1)
+    """Görsel ile alt metin arasındaki CLIP benzerliği, 0–1'e eşlenmiş (ek sinyal)."""
+    label: str | None = None
+    """Alt metin sınıfı (ALT-06): ``uygun``, ``yetersiz``, ``uyumsuz``, ``eksik``."""
+    method: Literal["rule", "model"] | None = None
+    """Bulgunun kaynağı: kural tabanlı desen ya da yapay zeka modeli (CLAUDE.md §9)."""
+    lang: str | None = None
+    """ALT-12: alt metnin tespit edilen dili; ``detail`` öğenin bildirilen dilidir."""
     screenshot: str | None = None
 
     # Kural modülü (axe-core)
@@ -164,10 +178,22 @@ class PageElement(BaseModel):
     bbox: BoundingBox | None = None
     context: ElementContext = Field(default_factory=ElementContext)
 
+    lang: str | None = None
+    """Öğenin geçerli dili: kendisinde ya da en yakın atasında bildirilen ``lang``."""
+    aria_hidden: bool = False
+    """Öğe ya da bir atası ``aria-hidden="true"``."""
+    in_control: bool = False
+    """Öğe bir bağlantı ya da düğmenin içinde (işlevsel görsel)."""
+
     # Türe özgü alanlar
     alt: str | None = None
     """Görsellerde ``alt`` özniteliği. ``None``: öznitelik yok; ``""``: dekoratif."""
+    label: str | None = None
+    """Görsellerde ``alt`` dışındaki metin alternatifi: ``aria-labelledby``,
+    ``aria-label`` ya da ``title`` (bu sırayla). ``None``: yok."""
     src: str | None = None
+    natural_width: int | None = None
+    """Görsellerde çözülmüş genişlik; ``0``: yüklenemedi ya da çözülemedi."""
     href: str | None = None
     input_type: str | None = None
 
@@ -179,6 +205,10 @@ class ToolVersions(BaseModel):
     axe_core: str
     playwright: str
     browser: str
+    torch: str | None = None
+    transformers: str | None = None
+    models: dict[str, str] = Field(default_factory=dict)
+    """Alt metin modelleri: rol → ``kimlik@revizyon`` (NFR-06). Sahte arka uçta ``fake``."""
 
 
 class PageInfo(BaseModel):
@@ -250,6 +280,61 @@ class KeyboardReport(BaseModel):
     """Atlanan denetimler ve nedenleri."""
 
 
+ImageStatus = Literal["analyzed", "decorative", "skipped", "failed", "rule_only"]
+
+
+class ImageAnalysis(BaseModel):
+    """Bir görselin alt metin analizi kaydı (SRS §7.1 ImageAnalysis, ALT-01..10).
+
+    Her görsel için bir kayıt vardır; bulgu üretmeyen (uygun, dekoratif,
+    atlanan, analiz edilemeyen) görseller de burada görünür.
+    """
+
+    selector: str
+    src: str | None = None
+    sha256: str | None = None
+    """Analiz edilen görsel baytlarının SHA-256 karması (ALT-09 önbellek anahtarı)."""
+    source: Literal["response", "data_uri", "screenshot"] | None = None
+    """Baytların kaynağı: sayfanın kendi yanıtı, ``data:`` URI ya da öğe ekran görüntüsü."""
+    status: ImageStatus
+    """``analyzed``: model analizi yapıldı. ``decorative``: ALT-02, puanlamaya
+    katılmaz. ``skipped``: görünmez, çok küçük, sınır aşıldı ya da desteklenmeyen dil.
+    ``failed``: indirilemedi ya da çözülemedi (ALT-10, "analiz edilemedi").
+    ``rule_only``: yalnızca kural tabanlı sonuç (eksik ya da genel ifade)."""
+    reason: str | None = None
+    cached: bool = False
+    """Model sonuçları önbellekten geldi (ALT-09)."""
+    alt: str | None = None
+    alt_translated: str | None = None
+    caption: str | None = None
+    e5: float | None = None
+    clip: float | None = None
+    similarity: float | None = None
+    label: Literal["uygun", "yetersiz", "uyumsuz", "eksik"] | None = None
+    confidence: float | None = None
+
+
+class AltTextReport(BaseModel):
+    """Alt metin modülünün özeti (ALT-01..12)."""
+
+    backend: str
+    approach: str
+    images: list[ImageAnalysis] = Field(default_factory=list)
+    audited_images: int = 0
+    """Bilgi verici ve görünür görsel sayısı (dekoratif ve atlananlar hariç)."""
+    audited_controls: int = 0
+    """Erişilebilir adı denetlenen bağlantı ve düğme sayısı (ALT-11)."""
+    audited: int = 0
+    """Toplam denetlenen öğe (Faz 3'te ``N_icerik``)."""
+    cache_hits: int = 0
+    seconds_total: float = 0.0
+    """Alt metin analizinin toplam süresi (model yükleme ve önbellek dâhil)."""
+    seconds_load: float | None = None
+    """Modellerin belleğe yüklenme süresi."""
+    seconds_per_image: float | None = None
+    """Önbellek dışı, model analizi yapılan görsel başına ortalama süre (NFR-01)."""
+
+
 class ScanReport(BaseModel):
     """Tek bir taramanın JSON raporu (RAP-01)."""
 
@@ -265,6 +350,7 @@ class ScanReport(BaseModel):
     findings: list[Finding]
     rules_summary: RulesSummary
     keyboard: KeyboardReport | None = None
+    alt_text: AltTextReport | None = None
     blocked_requests: list[BlockedRequest] = Field(default_factory=list)
     warnings: list[str] = Field(default_factory=list)
     artifacts: dict[str, bytes] = Field(default_factory=dict, exclude=True)

@@ -13,6 +13,8 @@ reports
 scans
 evidence
 models
+.models
+.yanki
 *.sqlite
 *.db
 .env

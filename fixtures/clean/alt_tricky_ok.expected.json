@@ -1,0 +1,11 @@
+{
+  "page": "alt_tricky_ok.html",
+  "description": "Set C: benzerlik yönteminin yanılabileceği ama erişilebilir görseller (işlevsel logo, adı verilmiş kişiler, metin içeren görsel, grafik, aria-label/aria-labelledby, figcaption, lang=en). Kesin bulgu beklenmez; gizli ve çok küçük görseller atlanır.",
+  "expected": [],
+  "allowed_review": [],
+  "alt_text": {
+    "expected": [],
+    "allowed_review": [],
+    "skipped": ["#t-hidden", "#t-icon"]
+  }
+}

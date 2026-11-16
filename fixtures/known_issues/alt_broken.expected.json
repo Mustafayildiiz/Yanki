@@ -1,0 +1,11 @@
+{
+  "page": "alt_broken.html",
+  "description": "İndirilemeyen ya da çözülemeyen görseller (ALT-10): bulgu üretmez, raporda status=failed olur. #b-blocked ağ politikasınca engellenir (NFR-08).",
+  "expected": [],
+  "allowed_review": [],
+  "alt_text": {
+    "expected": [],
+    "allowed_review": [],
+    "failed": ["#b-corrupt", "#b-missing", "#b-blocked"]
+  }
+}

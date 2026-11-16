@@ -1,0 +1,36 @@
+<!doctype html>
+<!-- Set B (ALT-11): erişilebilir adı belirsiz bağlantı ve düğmeler. Bağlam
+     cümlesi olduğu için WCAG 2.4.4'ü kesin ihlal etmeyebilir; bulgular her zaman
+     "elle incele"dir. #v-click "Tıklayın", #v-here "buraya", #v-more "Devamı",
+     #v-btn "Devam". #v-ok, #v-ok-btn açıklayıcıdır, bulgu üretmemelidir.
+     Klavye bulgusu beklenmez. -->
+<html lang="tr">
+<head>
+  <meta charset="utf-8">
+  <title>Kampanyalar</title>
+  <style>
+    body { font-family: sans-serif; margin: 0; color: #222; background: #fff; }
+    header, main, footer { padding: 1rem 2rem; }
+  </style>
+</head>
+<body>
+  <header><a href="#anasayfa">Ana sayfa</a></header>
+  <main>
+    <h1>Kampanyalar</h1>
+    <p>Bahar indirimlerini görmek için <a id="v-click" href="#bahar">Tıklayın</a>.</p>
+    <p>Başvuru koşulları <a id="v-here" href="#kosullar">buraya</a> yazıldı.</p>
+    <article>
+      <h2>Yeni bisiklet yolları açıldı</h2>
+      <p>Sahil boyunca 12 kilometrelik yeni bisiklet yolu hizmete girdi.</p>
+      <a id="v-more" href="#bisiklet">Devamı</a>
+    </article>
+    <p>Anketi tamamladıysanız sonraki adıma geçin.</p>
+    <p><button id="v-btn" type="button" onclick="this.nextElementSibling.hidden = false">Devam</button>
+      <span hidden>İkinci adım açıldı.</span></p>
+    <p><a id="v-ok" href="#takvim">Etkinlik takvimini inceleyin</a></p>
+    <p><button id="v-ok-btn" type="button" onclick="this.nextElementSibling.hidden = false">Bülten aboneliğini başlat</button>
+      <span hidden>Abonelik başladı.</span></p>
+  </main>
+  <footer><a href="#iletisim">İletişim</a></footer>
+</body>
+</html>

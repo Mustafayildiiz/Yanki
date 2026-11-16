@@ -1,0 +1,55 @@
+<!doctype html>
+<!-- Set C (NFR-05, ALT-02, ALT-06): içeriği doğru anlatan Türkçe alt metinler ve
+     dekoratif işaretli görseller. Kesin alt metin, klavye ya da kural bulgusu
+     beklenmez. Dekoratif: #d-empty (alt=""), #d-presentation (role=presentation),
+     #d-hidden (aria-hidden). Yanlış alarm tuzakları: özel adlar (Boğaziçi,
+     Ayasofya), kalabalık sahneler (pazar, ayçiçeği bahçesi). -->
+<html lang="tr">
+<head>
+  <meta charset="utf-8">
+  <title>Kent rehberi</title>
+  <style>
+    body { font-family: sans-serif; margin: 0; color: #222; background: #fff; }
+    header, main, footer { padding: 1rem 2rem; }
+    img { max-width: 300px; height: auto; display: block; margin: .5rem 0; }
+    .divider { width: 100%; max-width: 600px; height: 24px; object-fit: cover; }
+  </style>
+</head>
+<body>
+  <header>
+    <nav aria-label="Ana menü">
+      <a href="#gezi">Gezi</a>
+      <a href="#etkinlik">Etkinlikler</a>
+    </nav>
+  </header>
+  <main>
+    <h1>Kentte bir gün</h1>
+    <img id="d-empty" class="divider" src="../images/kayaks_lake.jpg" alt="">
+    <h2>Boğaz kıyısı</h2>
+    <img id="c-bridge" src="../images/bosphorus_bridge.jpg"
+         alt="Mavi gökyüzü altında dalgalı denizin üzerinden geçen asma köprü ve karşı kıyıdaki şehir">
+    <h2>Ayasofya'nın kedisi</h2>
+    <img id="c-cat" src="../images/cat_hagia_sophia.jpg"
+         alt="Mermer bir çıkıntının üzerinde oturan tekir kedi">
+    <h2>Park</h2>
+    <img id="c-dog" src="../images/dog_resting.jpg"
+         alt="Yeşil çimenlerin üzerinde uzanmış, sarı tüylü, siyah burunlu bir köpek">
+    <h2>Gar binası</h2>
+    <img id="c-station" src="../images/train_station.jpg"
+         alt="Boyası dökülmüş, panjurlu pencereleri olan eski, turuncu tren istasyonu binası">
+    <h2>Ayçiçeği bahçesi</h2>
+    <img id="c-sunflowers" src="../images/sunflowers.jpg"
+         alt="Ayçiçeği bahçesinin önündeki kanal kenarında yürüyen ziyaretçiler">
+    <h2>Üretici pazarı</h2>
+    <img id="c-market" src="../images/market_vegetables.jpg"
+         alt="Pazar tezgâhında lahana, karnabahar, havuç ve muz">
+    <img id="d-presentation" class="divider" src="../images/boathouse_lake.jpg" role="presentation" alt="">
+    <h2>Terk edilmiş bisiklet</h2>
+    <img id="c-bicycle" src="../images/bicycle_grass.jpg"
+         alt="Yaprakların ve otların arasında yatan sarı bir bisiklet">
+    <p><img id="d-hidden" src="../images/sunflowers.jpg" aria-hidden="true" alt="" width="24" height="24">
+      Yerinde görmek için <a href="#harita">haritayı açın</a>.</p>
+  </main>
+  <footer><a href="#iletisim">İletişim</a></footer>
+</body>
+</html>

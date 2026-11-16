@@ -1,0 +1,59 @@
+<!doctype html>
+<!-- Set C (NFR-05): benzerlik yönteminin tasarım gereği yanılabileceği, ama
+     erişilebilir olan görseller. Kesin bulgu beklenmez; en fazla "elle incele".
+     #t-logo: bağlantılı logo, alt metni işlevini anlatır ("ana sayfa").
+     #t-people: adı verilmiş kişiler (Atatürk, MacArthur).
+     #t-cover: içinde metin olan dergi kapağı ve adı verilmiş kişi.
+     #t-chart: verisini anlatan grafik. #t-notice: metnini aktaran duyuru görseli.
+     #t-arialabel / #t-labelledby: alt yerine aria-label / aria-labelledby.
+     #t-figure: figcaption ile birlikte. #t-en: lang="en" bölümünde İngilizce alt.
+     #t-hidden: gizli, alt'sız görsel (görünmez; ALT-01 değil).
+     #t-icon: 16 px simge (model analizi için çok küçük). -->
+<html lang="tr">
+<head>
+  <meta charset="utf-8">
+  <title>Yankı Belediyesi</title>
+  <style>
+    body { font-family: sans-serif; margin: 0; color: #222; background: #fff; }
+    header, main, footer { padding: 1rem 2rem; }
+    main img { max-width: 320px; height: auto; display: block; margin: .5rem 0; }
+    main img.icon { display: inline; width: 16px; height: 16px; margin: 0; vertical-align: middle; }
+    figure { margin: 1rem 0; }
+  </style>
+</head>
+<body>
+  <header>
+    <a id="t-logo-link" href="#anasayfa"><img id="t-logo" src="../images/logo.svg" alt="Yankı Belediyesi ana sayfa" width="180" height="60"></a>
+  </header>
+  <main>
+    <h1>Belediyeden haberler</h1>
+    <h2>Arşivden</h2>
+    <img id="t-people" src="../images/ataturk_macarthur_1932.jpg"
+         alt="Mustafa Kemal Atatürk ve Douglas MacArthur, 1932'de takım elbiseli konuklarla bir salonda oturuyor">
+    <img id="t-cover" src="../images/time_cover_1923.jpg"
+         alt="Time dergisinin 24 Mart 1923 tarihli kapağı: kalpaklı Mustafa Kemal Paşa'nın karakalem portresi">
+    <h2>Başvurular</h2>
+    <img id="t-chart" src="../images/chart.svg"
+         alt="Sütun grafik: başvuru sayısı 2022'de 60, 2023'te 120, 2024'te 180">
+    <h2>Duyuru</h2>
+    <img id="t-notice" src="../images/notice.svg"
+         alt="Su kesintisi: 12 Mart, 09.00–17.00, Merkez ve Yenimahalle">
+    <h2>Göl ve deniz</h2>
+    <img id="t-arialabel" src="../images/sailboat.jpg" aria-label="Gölde tek kişilik beyaz bir yelkenliyle yarışan sporcu">
+    <p id="t-lighthouse-cap">Mavi gökyüzü önünde yükselen beyaz taş deniz feneri</p>
+    <img id="t-labelledby" src="../images/lighthouse.jpg" aria-labelledby="t-lighthouse-cap">
+    <figure>
+      <img id="t-figure" src="../images/boathouse_lake.jpg" alt="Dağların eteğindeki gölde ahşap kayıkhane">
+      <figcaption>Kayıkhane yaz boyunca ziyarete açık; arka planda bulutlu kayalık dağlar görülüyor.</figcaption>
+    </figure>
+    <section lang="en">
+      <h2>For visitors</h2>
+      <img id="t-en" src="../images/cat_burmese.jpg" alt="A dark brown cat with green eyes">
+    </section>
+    <img id="t-hidden" src="../images/red_car.jpg" style="display: none">
+    <p><img id="t-icon" class="icon" src="../images/warning.svg" alt="Uyarı"> Otopark yarın kapalı.
+      <a href="#otopark">Otopark duyurusu</a></p>
+  </main>
+  <footer><a href="#iletisim">İletişim</a></footer>
+</body>
+</html>

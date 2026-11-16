@@ -5,5 +5,6 @@
     {"type": "keyboard", "rule": "KLV-05", "check": "keyboard_trap", "selector": "#t-bold", "severity": "critical", "needs_review": false},
     {"type": "keyboard", "rule": "KLV-05", "check": "keyboard_trap", "selector": "#tag-b", "severity": "critical", "needs_review": false}
   ],
-  "allowed_review": []
+  "allowed_review": [],
+  "alt_text": {"expected": [], "allowed_review": []}
 }

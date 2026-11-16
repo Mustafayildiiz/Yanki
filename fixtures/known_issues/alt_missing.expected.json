@@ -1,0 +1,15 @@
+{
+  "page": "alt_missing.html",
+  "description": "Alt metni ve erişilebilir adı olmayan bilgi verici görseller (ALT-01). Kural tabanlı; model gerektirmez. axe image-alt de bunları bulur (beklenen örtüşme).",
+  "expected": [],
+  "allowed_review": [],
+  "alt_text": {
+    "expected": [
+      {"type": "alt_text", "rule": "ALT-01", "check": "missing", "selector": "#m-dog", "severity": "critical", "needs_review": false, "requires_models": false},
+      {"type": "alt_text", "rule": "ALT-01", "check": "missing", "selector": "#m-link-img", "severity": "critical", "needs_review": false, "requires_models": false},
+      {"type": "alt_text", "rule": "ALT-01", "check": "missing", "selector": "#m-input", "severity": "critical", "needs_review": false, "requires_models": false},
+      {"type": "alt_text", "rule": "ALT-01", "check": "missing", "selector": "#m-roleimg", "severity": "critical", "needs_review": false, "requires_models": false}
+    ],
+    "allowed_review": []
+  }
+}

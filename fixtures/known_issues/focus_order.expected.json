@@ -7,5 +7,6 @@
     {"type": "keyboard", "rule": "KLV-04", "check": "focus_order", "selector": "#tb-delete", "severity": "moderate", "needs_review": false},
     {"type": "keyboard", "rule": "KLV-09", "check": "skip_link_missing", "selector": "html", "severity": "low", "needs_review": true}
   ],
-  "allowed_review": []
+  "allowed_review": [],
+  "alt_text": {"expected": [], "allowed_review": []}
 }

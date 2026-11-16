@@ -1,0 +1,19 @@
+{
+  "page": "alt_generic.html",
+  "description": "Dosya adı ya da genel ifade olan alt metinler (ALT-07). Kural tabanlı; model gerektirmez. axe bunları kaçırır (alt metin var).",
+  "expected": [],
+  "allowed_review": [],
+  "alt_text": {
+    "expected": [
+      {"type": "alt_text", "rule": "ALT-07", "check": "generic_text", "selector": "#g-file", "severity": "important", "needs_review": false, "requires_models": false},
+      {"type": "alt_text", "rule": "ALT-07", "check": "generic_text", "selector": "#g-resim", "severity": "important", "needs_review": false, "requires_models": false},
+      {"type": "alt_text", "rule": "ALT-07", "check": "generic_text", "selector": "#g-foto", "severity": "important", "needs_review": false, "requires_models": false},
+      {"type": "alt_text", "rule": "ALT-07", "check": "generic_text", "selector": "#g-dsc", "severity": "important", "needs_review": false, "requires_models": false},
+      {"type": "alt_text", "rule": "ALT-07", "check": "generic_text", "selector": "#g-gorsel", "severity": "important", "needs_review": false, "requires_models": false},
+      {"type": "alt_text", "rule": "ALT-07", "check": "generic_text", "selector": "#g-srcname", "severity": "important", "needs_review": false, "requires_models": false}
+    ],
+    "allowed_review": [
+      {"rule": "ALT-12", "check": "lang_mismatch", "selector": "#g-srcname"}
+    ]
+  }
+}

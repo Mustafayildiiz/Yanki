@@ -308,7 +308,7 @@ compose.yaml         # geliştirme ortamı (mevcut)
 
 | Faz | Kapsam | Gereksinimler | Durum |
 | --- | --- | --- | --- |
-| 0 | İskelet: repo, `pyproject.toml`, CI, `yanki scan` ile axe-core → JSON (Docker ortamı hazır) | TAR-01..05, KUR-01..03, RAP-01 (JSON), NFR-08/11/15 | ✅ Tamamlandı (NFR-11: Windows/macOS CI henüz koşmadı) |
+| 0 | İskelet: repo, `pyproject.toml`, CI, `yanki scan` ile axe-core → JSON (Docker ortamı hazır) | TAR-01..05, KUR-01..03, RAP-01 (JSON), NFR-08/11/15 | ✅ Tamamlandı |
 | 1 | Klavye modülü ve Set B/C test sayfaları | KLV-01..10, NFR-04/05 | ⏳ Sıradaki |
 | 2 | Alt metin analizi ve model karşılaştırma deneyi | ALT-01..12, NFR-01/03/12/13 | Planlandı |
 | 3 | Puanlama, HTML/PDF rapor, CI eşikleri | PUA-01..05, RAP-01..06, CLI-01..04 | Planlandı |

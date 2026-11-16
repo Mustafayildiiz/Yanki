@@ -7,6 +7,9 @@ Akış:
 3. Kalıcı olmayan, yalıtılmış bir tarayıcı bağlamında sayfa açılır.
 4. ``load`` beklenir, ardından ağın durulması sınırlı süre beklenir (TAR-02).
 5. axe-core enjekte edilir, öğeler toplanır (TAR-03), kurallar çalıştırılır.
+6. Klavye testi en son çalışır (KLV-01..10); sayfanın durumunu değiştirdiği
+   için axe ve öğe toplamadan sonra gelir. Sayfayı yeniden yüklemesi gerekirse
+   bu, aynı proxy denetiminden geçen ``_navigate`` ile yapılır.
 
 Çekirdek async'tir. Faz 1'deki klavye modülü ve Faz 4'teki FastAPI aynı
 olay döngüsü modelini kullanır; ``scan()`` eşzamanlı çağıranlar içindir.
@@ -29,6 +32,7 @@ from yanki import __version__
 from yanki.config import YankiConfig
 from yanki.core.collect import collect_elements
 from yanki.core.errors import ScanError, TargetError
+from yanki.core.keyboard import KeyboardResult, run_keyboard
 from yanki.core.netguard import GuardProxy, NetworkPolicy
 from yanki.core.rules import inject_axe, run_axe
 from yanki.core.schema import (
@@ -138,6 +142,10 @@ async def run_scan(
                     title=await page.title(),
                     lang=await page.evaluate("document.documentElement.getAttribute('lang')"),
                 )
+                keyboard: KeyboardResult | None = None
+                if config.keyboard.enabled:
+                    keyboard = await _run_keyboard(page, tgt, config, proxy)
+                    warnings.extend(keyboard.warnings)
                 browser_version = browser.version
             finally:
                 await browser.close()
@@ -157,14 +165,29 @@ async def run_scan(
         seed=config.seed,
         config=config.model_dump(mode="json"),
         elements=elements,
-        findings=finalize_findings(findings),
+        findings=finalize_findings(findings + (keyboard.findings if keyboard else [])),
         rules_summary=rules_summary,
+        keyboard=keyboard.report if keyboard else None,
         blocked_requests=[
             BlockedRequest(host=host, port=port, reason=reason)
             for host, port, reason in sorted({(b.host, b.port, b.reason) for b in proxy.blocked})
         ],
         warnings=warnings,
+        artifacts=keyboard.artifacts if keyboard else {},
     )
+
+
+async def _run_keyboard(
+    page: Page, tgt: Target, config: YankiConfig, proxy: GuardProxy
+) -> KeyboardResult:
+    """Klavye modülünü çalıştırır. Sayfa sıfırlaması aynı ağ politikasından geçer."""
+
+    async def reset() -> None:
+        # Yeniden yükleme uyarıları (ör. ağın durulmaması) her sondada tekrarlanmasın.
+        await _navigate(page, tgt, config, proxy, [])
+        await inject_axe(page)
+
+    return await run_keyboard(page, config.keyboard, reset=reset)
 
 
 def scan(target: str | Target, config: YankiConfig | None = None) -> ScanReport:

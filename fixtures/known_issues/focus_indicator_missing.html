@@ -1,0 +1,34 @@
+<!doctype html>
+<!-- Set B (KLV-03, NFR-04): odak göstergesi kaldırılmış öğeler.
+     .no-ring sınıfı outline'ı kaldırır ve yerine bir şey koymaz.
+     #help (tarayıcı varsayılanı) ve #send (özel box-shadow) doğru örneklerdir. -->
+<html lang="tr">
+<head>
+  <meta charset="utf-8">
+  <title>Odak göstergesi yok</title>
+  <style>
+    body { font-family: sans-serif; margin: 2rem; color: #222; background: #fff; }
+    .no-ring:focus, .no-ring:focus-visible { outline: none; }
+    #send:focus { outline: none; }
+    #send:focus-visible { box-shadow: 0 0 0 3px #1a5fb4; }
+    label { display: block; margin-top: 1rem; }
+  </style>
+</head>
+<body>
+  <header>
+    <nav aria-label="Ana menü">
+      <a id="nav-home" class="no-ring" href="#anasayfa">Ana sayfa</a>
+      <a id="help" href="#yardim">Yardım</a>
+    </nav>
+  </header>
+  <main>
+    <h1>Hesap ayarları</h1>
+    <label for="search">Ayarlarda ara</label>
+    <input id="search" class="no-ring" type="text">
+    <p>
+      <button id="save" class="no-ring" type="button">Değişiklikleri kaydet</button>
+      <button id="send" type="button">Bağlantıyı paylaş</button>
+    </p>
+  </main>
+</body>
+</html>

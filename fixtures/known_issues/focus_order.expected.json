@@ -1,0 +1,11 @@
+{
+  "page": "focus_order.html",
+  "description": "Pozitif tabindex ile altbilgiden başlığa sıçrama ve ters sıralanmış araç çubuğu (KLV-04). main öncesinde 6 durak olup atla bağlantısı yok (KLV-09, düşük güven).",
+  "expected": [
+    {"type": "keyboard", "rule": "KLV-04", "check": "focus_order", "selector": "#nav-home", "severity": "moderate", "needs_review": false},
+    {"type": "keyboard", "rule": "KLV-04", "check": "focus_order", "selector": "#tb-edit", "severity": "moderate", "needs_review": false},
+    {"type": "keyboard", "rule": "KLV-04", "check": "focus_order", "selector": "#tb-delete", "severity": "moderate", "needs_review": false},
+    {"type": "keyboard", "rule": "KLV-09", "check": "skip_link_missing", "selector": "html", "severity": "low", "needs_review": true}
+  ],
+  "allowed_review": []
+}

@@ -29,7 +29,7 @@ def test_scan_writes_valid_json_report(tmp_path: Path) -> None:
     result = runner.invoke(app, ["scan", str(PAGES / "rules_violations.html"), "-o", str(out)])
     assert result.exit_code == ExitCode.OK, result.output
     report = ScanReport.model_validate_json(out.read_text(encoding="utf-8"))
-    assert len(report.findings) == 5
+    assert len([f for f in report.findings if f.type == "rule"]) == 5
     assert report.findings[0].id == "f-0001"
     # Sayfa kaynaklı Türkçe metin bozulmadan yazılır.
     assert "Öne çıkanlar" in out.read_text(encoding="utf-8")

@@ -1,0 +1,9 @@
+{
+  "page": "keyboard_trap.html",
+  "description": "İleri yönde (#editor) ve yalnızca geri yönde (#tagbox) klavye tuzağı. Tuzak bulgusunun seçicisi döngünün tekrar eden ilk öğesidir.",
+  "expected": [
+    {"type": "keyboard", "rule": "KLV-05", "check": "keyboard_trap", "selector": "#t-bold", "severity": "critical", "needs_review": false},
+    {"type": "keyboard", "rule": "KLV-05", "check": "keyboard_trap", "selector": "#tag-b", "severity": "critical", "needs_review": false}
+  ],
+  "allowed_review": []
+}

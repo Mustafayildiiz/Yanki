@@ -12,7 +12,7 @@ from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
-SCHEMA_VERSION = "0.1.0"
+SCHEMA_VERSION = "0.2.0"
 
 FindingType = Literal["rule", "alt_text", "keyboard"]
 Severity = Literal["critical", "important", "moderate", "low"]
@@ -22,6 +22,26 @@ SEVERITY_ORDER: dict[str, int] = {"critical": 0, "important": 1, "moderate": 2, 
 
 _WCAG_SC = re.compile(r"^[1-4]\.\d{1,2}\.\d{1,2}$")
 _FINDING_ID = re.compile(r"^f-\d{4,}$")
+
+
+class BoundingBox(BaseModel):
+    x: int
+    y: int
+    width: int
+    height: int
+
+
+class KeyStep(BaseModel):
+    """Bulgu kanıtındaki bir klavye ya da fare adımı (KLV-10)."""
+
+    n: int
+    key: str
+    """Basılan tuş (``Tab``, ``Shift+Tab``, ``Enter``, ``Space``, ``Escape``), ``click``
+    ya da düzeneğin kendi müdahalesi (``focus()``: öğe programla odaklandı)."""
+    selector: str | None = None
+    """Adımdan sonra odaklı öğe. ``None``: odak belgenin dışında."""
+    role: str | None = None
+    name: str = ""
 
 
 class Evidence(BaseModel):
@@ -48,6 +68,20 @@ class Evidence(BaseModel):
     help_url: str | None = None
     failure_summary: str | None = None
     axe_impact: str | None = None
+
+    # Klavye modülü (KLV-01..10)
+    check: str | None = None
+    """Klavye denetim türü (ör. ``keyboard_trap``); aynı öğedeki bulguları ayırır."""
+    steps: list[KeyStep] | None = None
+    """Bulguya götüren adım dizisi (KLV-10)."""
+    focus: str | None = None
+    """Bulgu anında odaklı öğenin seçicisi. ``None``: odak belgenin dışında."""
+    trigger: str | None = None
+    """Modali açan öğe (KLV-08)."""
+    previous: str | None = None
+    """Odak sırası sapmasında bir önceki öğe (KLV-04)."""
+    detail: str | None = None
+    """Kısa makine okunur açıklama (ör. ``offscreen``, ``Space``)."""
 
 
 class Finding(BaseModel):
@@ -97,16 +131,15 @@ def finalize_findings(findings: list[Finding]) -> list[Finding]:
     """Bulguları belirlenimci biçimde sıralar ve ``f-0001``'den numaralar (NFR-06)."""
     ordered = sorted(
         findings,
-        key=lambda f: (f.type, f.rule, f.selector, SEVERITY_ORDER[f.severity]),
+        key=lambda f: (
+            f.type,
+            f.rule,
+            f.evidence.check or "",
+            f.selector,
+            SEVERITY_ORDER[f.severity],
+        ),
     )
     return [f.model_copy(update={"id": f"f-{i:04d}"}) for i, f in enumerate(ordered, start=1)]
-
-
-class BoundingBox(BaseModel):
-    x: int
-    y: int
-    width: int
-    height: int
 
 
 class ElementContext(BaseModel):
@@ -183,6 +216,40 @@ class RulesSummary(BaseModel):
     inapplicable: int
 
 
+class KeyboardStep(BaseModel):
+    """Tab gezisinin bir adımı (SRS §7.1 KeyboardStep, KLV-01, KLV-02)."""
+
+    index: int
+    direction: Literal["forward", "backward"]
+    selector: str | None
+    """Odaklı öğe. ``None``: odak belgeden çıktı (son duraktan sonra)."""
+    tag: str | None = None
+    role: str | None = None
+    name: str = ""
+    bbox: BoundingBox | None = None
+    """Sayfa koordinatında konum."""
+    in_frame: bool = False
+    """Odak içine girilemeyen (başka kökenli) bir iframe'de."""
+    focus_visible: bool | None = None
+    """Odak göstergesi görünür mü (KLV-03). ``None``: değerlendirilemedi."""
+
+
+class KeyboardReport(BaseModel):
+    """Klavye modülünün özeti (KLV-01..10)."""
+
+    steps: list[KeyboardStep] = Field(default_factory=list)
+    backward_steps: list[KeyboardStep] = Field(default_factory=list)
+    tab_stops: int = 0
+    """İleri gezide ziyaret edilen farklı öğe sayısı (puanlamada ``N_klavye``)."""
+    completed: bool = False
+    """İleri gezi belgenin sonuna ulaştı (tuzak ya da adım sınırı yok)."""
+    step_limit_reached: bool = False
+    probes: dict[str, int] = Field(default_factory=dict)
+    """Denetim türüne göre yapılan sonda sayısı."""
+    skipped: list[str] = Field(default_factory=list)
+    """Atlanan denetimler ve nedenleri."""
+
+
 class ScanReport(BaseModel):
     """Tek bir taramanın JSON raporu (RAP-01)."""
 
@@ -197,5 +264,9 @@ class ScanReport(BaseModel):
     elements: list[PageElement]
     findings: list[Finding]
     rules_summary: RulesSummary
+    keyboard: KeyboardReport | None = None
     blocked_requests: list[BlockedRequest] = Field(default_factory=list)
     warnings: list[str] = Field(default_factory=list)
+    artifacts: dict[str, bytes] = Field(default_factory=dict, exclude=True)
+    """Kanıt dosyaları (ör. ``evidence/<karma>.png`` → PNG). JSON'a yazılmaz;
+    ``yanki.core.evidence.save_evidence`` ile diske yazılır (KLV-10)."""

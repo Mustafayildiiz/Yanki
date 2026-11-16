@@ -1,0 +1,35 @@
+<!doctype html>
+<!-- Set B (KLV-09, NFR-04): "Ana içeriğe atla" bağlantısı var ve hedefi de var,
+     ama bir tıklama işleyicisi varsayılan davranışı engelliyor; Enter'dan sonra
+     odak ana içeriğe geçmiyor. -->
+<html lang="tr">
+<head>
+  <meta charset="utf-8">
+  <title>Bozuk atla bağlantısı</title>
+  <style>
+    body { font-family: sans-serif; margin: 2rem; color: #222; background: #fff; }
+    .skip { position: absolute; left: -9999px; top: 0; background: #fff; padding: .5rem; }
+    .skip:focus { left: .5rem; }
+    nav a { margin-right: 1rem; }
+  </style>
+</head>
+<body>
+  <a id="skip" class="skip" href="#main-content">Ana içeriğe atla</a>
+  <header>
+    <nav aria-label="Ana menü">
+      <a id="n1" href="#fakulteler">Fakülteler</a>
+      <a id="n2" href="#aday">Aday öğrenci</a>
+      <a id="n3" href="#arastirma">Araştırma</a>
+      <a id="n4" href="#kutuphane">Kütüphane</a>
+      <a id="n5" href="#iletisim">İletişim</a>
+    </nav>
+  </header>
+  <main id="main-content">
+    <h1>Duyurular</h1>
+    <p><a id="first-news" href="#duyuru-1">Kayıt takvimi yayımlandı</a></p>
+  </main>
+  <script>
+    document.getElementById('skip').addEventListener('click', (e) => e.preventDefault());
+  </script>
+</body>
+</html>

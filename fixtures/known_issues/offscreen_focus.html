@@ -1,0 +1,33 @@
+<!doctype html>
+<!-- Set B (KLV-03, NFR-04): odak görünmeyen yere gidiyor.
+     #flyout ekran dışına itilmiş bir açılır menüdür; bağlantıları yine de
+     odaklanabilir. #tiny 1×1 piksele kırpılmıştır ve odaklanınca görünmez. -->
+<html lang="tr">
+<head>
+  <meta charset="utf-8">
+  <title>Ekran dışı odak</title>
+  <style>
+    body { font-family: sans-serif; margin: 2rem; color: #222; background: #fff; }
+    #flyout { position: absolute; left: -9999px; top: 0; }
+    #tiny { position: absolute; width: 1px; height: 1px; overflow: hidden;
+            clip: rect(0 0 0 0); white-space: nowrap; }
+  </style>
+</head>
+<body>
+  <header>
+    <nav aria-label="Ürünler">
+      <a id="products" href="#urunler">Ürünler</a>
+      <ul id="flyout">
+        <li><a id="m1" href="#telefon">Telefonlar</a></li>
+        <li><a id="m2" href="#tablet">Tabletler</a></li>
+      </ul>
+    </nav>
+  </header>
+  <main>
+    <h1>Mağaza</h1>
+    <p>Kampanyalar için <a id="deals" href="#kampanya">fırsatlar sayfasına</a> bakın.</p>
+    <a id="tiny" href="#gizli">Gizli kısayol</a>
+    <p><a id="contact" href="#iletisim">İletişim</a></p>
+  </main>
+</body>
+</html>

@@ -37,7 +37,12 @@ def _cfg(**scan: object) -> YankiConfig:
 
 
 def _rule_keys(report: ScanReport) -> list[tuple[str, str, str, list[str], str]]:
-    return sorted((f.type, f.rule, f.selector, f.wcag, f.severity) for f in report.findings)
+    # Klavye bulguları (Faz 1) bu sayfaların kural beklentisinin parçası değildir.
+    return sorted(
+        (f.type, f.rule, f.selector, f.wcag, f.severity)
+        for f in report.findings
+        if f.type == "rule"
+    )
 
 
 # --- KUR-01, KUR-02, KUR-03, TAR-01 ---------------------------------------
@@ -51,7 +56,7 @@ def test_known_violations_exactly_detected() -> None:
         for e in expected["expected"]
     )
     assert _rule_keys(report) == want
-    for f in report.findings:
+    for f in (f for f in report.findings if f.type == "rule"):
         assert f.wcag, f"WCAG ölçütü olmayan kural bulgusu: {f.rule}"  # KUR-02
         assert f.evidence.html and f.evidence.help_url
     assert report.tool.axe_core == AXE_VERSION  # KUR-03

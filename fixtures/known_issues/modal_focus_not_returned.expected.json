@@ -1,0 +1,8 @@
+{
+  "page": "modal_focus_not_returned.html",
+  "description": "Modal kapanınca odak tetikleyiciye (#cancel-order) dönmüyor. Diğer üç APG denetimi geçer.",
+  "expected": [
+    {"type": "keyboard", "rule": "KLV-08", "check": "modal_focus_not_returned", "selector": "#confirm", "severity": "moderate", "needs_review": false}
+  ],
+  "allowed_review": []
+}

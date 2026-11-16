@@ -5,7 +5,7 @@
 Yankı bir web sayfasını kendisi açar ve üç alanda denetler: WCAG 2.2 kuralları, görsel alt metinlerinin anlamı ve klavyeyle gezinme. Bulguların hepsi kanıta dayanır ve tek bir erişilebilirlik puanında toplanır.
 
 > [!NOTE]
-> **Durum: Faz 0 tamamlandı.** `yanki scan` komutu bir URL'yi ya da yerel HTML dosyasını Chromium'da açar ve axe-core ile WCAG 2.2 A/AA kurallarını denetler. Bulguları ve sayfadaki öğeleri JSON rapor olarak yazar. Alt metin analizi, klavye testi, puanlama, HTML/PDF rapor ve API henüz yoktur; bunlar **planlanan** tasarımdır. Gereksinimlerin tamamı [docs/SRS.md](docs/SRS.md) dosyasındadır.
+> **Durum: Faz 1 tamamlandı.** `yanki scan` komutu bir URL'yi ya da yerel HTML dosyasını Chromium'da açar, axe-core ile WCAG 2.2 A/AA kurallarını denetler ve gerçek tuş basımlarıyla klavye testi yapar (Tab gezisi, odak göstergesi, odak sırası, klavye tuzağı, tıklanabilir ama odaklanamaz öğeler, Enter/Boşluk, modal, atla bağlantısı). Bulguları ve sayfadaki öğeleri JSON rapor olarak yazar; klavye bulgularının ekran görüntüleri raporun yanındaki `evidence/` klasörüne yazılır. Alt metin analizi, puanlama, HTML/PDF rapor ve API henüz yoktur; bunlar **planlanan** tasarımdır. Gereksinimlerin tamamı [docs/SRS.md](docs/SRS.md) dosyasındadır.
 
 ---
 
@@ -218,7 +218,7 @@ Güvenlik ve donanım ayrıntıları:
 
 ## Planlanan kullanım
 
-> Faz 0'da çalışan komut `yanki scan` ve yalnızca `--format json` biçimidir. Diğer komutlar ve seçenekler hedeflenen arayüzü anlatır.
+> Şu an çalışan komut `yanki scan` ve yalnızca `--format json` biçimidir. Diğer komutlar ve seçenekler hedeflenen arayüzü anlatır.
 
 Şu an çalışan tarama:
 
@@ -231,7 +231,12 @@ docker compose run --rm yanki yanki scan tests/pages/clean.html --viewport 1280x
 
 # Ana makinedeki bir sunucu: yerel ağ izni açıkça verilmelidir (NFR-08)
 docker compose run --rm yanki yanki scan http://host.docker.internal:8000 --allow-private-network
+
+# Klavye testinin Set B / Set C ölçümü (NFR-04, NFR-05)
+docker compose run --rm yanki python experiments/keyboard_eval.py
 ```
+
+Klavye testi sayfadaki kontrolleri etkinleştirir. Etkinleştirme politikası temkinlidir: form içindeki kontroller, gönder/sıfırla düğmeleri ve gerçek adrese giden bağlantılar asla etkinleştirilmez. Klavye testi `[keyboard] enabled = false` ile kapatılabilir.
 
 Ayarların tamamı bir TOML dosyasıyla verilebilir (`--config yanki.toml`); alanlar [yanki/config.py](yanki/config.py) dosyasındadır.
 
@@ -276,7 +281,7 @@ Raporlar bind mount sayesinde proje klasörüne yazılır ve ana makineden doğr
 
 ## Depo yapısı
 
-Hedeflenen yapı. Faz 0'da `core/{scan,rules,schema}.py`, `cli.py` ve `config.py` oluşturuldu; diğerleri ilgili fazda eklenir:
+Hedeflenen yapı. Faz 0'da `core/{scan,rules,schema}.py`, `cli.py` ve `config.py`; Faz 1'de `core/keyboard/`, `core/evidence.py`, `fixtures/known_issues/`, `fixtures/clean/` ve `experiments/keyboard_eval.py` oluşturuldu; diğerleri ilgili fazda eklenir:
 
 ```text
 yanki/
@@ -309,8 +314,8 @@ compose.yaml         # geliştirme ortamı (mevcut)
 | Faz | Kapsam | Gereksinimler | Durum |
 | --- | --- | --- | --- |
 | 0 | İskelet: repo, `pyproject.toml`, CI, `yanki scan` ile axe-core → JSON (Docker ortamı hazır) | TAR-01..05, KUR-01..03, RAP-01 (JSON), NFR-08/11/15 | ✅ Tamamlandı |
-| 1 | Klavye modülü ve Set B/C test sayfaları | KLV-01..10, NFR-04/05 | ⏳ Sıradaki |
-| 2 | Alt metin analizi ve model karşılaştırma deneyi | ALT-01..12, NFR-01/03/12/13 | Planlandı |
+| 1 | Klavye modülü ve Set B/C test sayfaları | KLV-01..10, NFR-04/05 | ✅ Tamamlandı |
+| 2 | Alt metin analizi ve model karşılaştırma deneyi | ALT-01..12, NFR-01/03/12/13 | ⏳ Sıradaki |
 | 3 | Puanlama, HTML/PDF rapor, CI eşikleri | PUA-01..05, RAP-01..06, CLI-01..04 | Planlandı |
 | 4 | REST API, SQLite, Streamlit demo | API-01..05, UI-01, UI-03..06 | Planlandı |
 | 5 | Toplu tarama, Lighthouse/WAVE karşılaştırması, CSV | KAR-01..05 | Planlandı |

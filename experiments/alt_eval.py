@@ -247,6 +247,9 @@ def classify_rows(rows: list[dict[str, str]], config: YankiConfig) -> dict[str, 
             collected.inputs[sel] = Gathered(image=img, source="response")
         else:
             collected.inputs[sel] = Gathered(reason=f"unsupported_format:{mime}")
+    # Sayfa taramasındaki görsel sınırı (max_images) Set A'yı kesmesin.
+    alt_cfg = config.alt_text.model_copy(update={"max_images": max(len(rows), 1)})
+    config = config.model_copy(update={"alt_text": alt_cfg})
     t0 = time.perf_counter()
     result = analyze(elements, collected, config, page_lang=None)
     wall = time.perf_counter() - t0

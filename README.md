@@ -243,6 +243,7 @@ docker compose run --rm yanki yanki scan tests/pages/clean.html --viewport 1280x
 docker compose run --rm yanki yanki scan http://host.docker.internal:8000 --allow-private-network
 
 # Alt metin modellerini indir (bir kez; ~2,5 GB, yalnızca ağırlıklar)
+# --all: çok dilli yolun (approach = "multilingual") modelini de indirir
 docker compose run --rm yanki yanki models download
 
 # Klavye testinin Set B / Set C ölçümü (NFR-04, NFR-05)

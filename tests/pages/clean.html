@@ -1,0 +1,35 @@
+<!doctype html>
+<!-- Faz 0 temiz sayfa: axe WCAG A/AA kurallarında ihlal beklenmez ve TAR-03
+     bağlam toplama burada doğrulanır. Set C (fixtures/clean) değildir. -->
+<html lang="tr">
+<head>
+  <meta charset="utf-8">
+  <title>Temiz test sayfası</title>
+</head>
+<body>
+  <header>
+    <nav aria-label="Ana menü">
+      <a id="home-link" href="#">Ana sayfa</a>
+    </nav>
+  </header>
+  <main>
+    <h1>Üniversite tanıtımı</h1>
+    <section>
+      <h2>Kampüs</h2>
+      <figure>
+        <img id="campus" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40'%3E%3Crect width='40' height='40' fill='%23345'/%3E%3C/svg%3E" alt="Kampüsün kuşbakışı görünümü" width="40" height="40">
+        <figcaption>Ana kampüs, 2026 baharı.</figcaption>
+      </figure>
+      <img id="divider" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='2'/%3E" alt="" width="10" height="2">
+    </section>
+    <section>
+      <h2>İletişim</h2>
+      <form>
+        <label for="name">Adınız</label>
+        <input id="name" type="text">
+        <button id="send" type="submit">Mesajı gönder</button>
+      </form>
+    </section>
+  </main>
+</body>
+</html>

@@ -83,8 +83,12 @@ def classify(info: dict[str, Any] | None) -> int | None:
         return None
     if info["declared"]:
         return 0
-    if not info["native"] and (role in BUTTONLIKE_ROLES or info["onclick"] or info["pointer"]):
-        return 1
+    if not info["native"]:
+        # Ok tuşlarıyla çalışan bileşenler (slider, combobox, listbox …) Enter/Boşluk
+        # beklemez; yalnızca düğme benzeri roller ve rolsüz tıklanabilir öğeler sınanır.
+        if role in BUTTONLIKE_ROLES or (not role and (info["onclick"] or info["pointer"])):
+            return 1
+        return None
     if tag == "button" or href in ("hash", "js") or role == "button":
         return 2
     return None
@@ -110,6 +114,12 @@ class Prober:
                 "sayfa kendiliğinden değişiyor; etki tespiti yalnızca gezinme ve dialoga "
                 "dayanıyor (KLV-06/07 bulguları eksik kalabilir)"
             )
+
+    async def _hover(self, point: list[float]) -> None:
+        """Fareyi önce öğenin üzerine getirir; hover kaynaklı değişim tıklama etkisi sayılmaz."""
+        await self.s.page.mouse.move(point[0], point[1])
+        await self.s.settle()
+        await self.s.wait_effect()
 
     async def watch(self) -> None:
         await self.s.page.evaluate(js.WATCH_START, self.cfg.modal_min_cover)
@@ -189,6 +199,7 @@ class Prober:
         await self.s.focus(element_id)  # kanıt: odağın son durumu öğenin üzerinde
         shot = await self.s.evidence_shot()
         url = self.s.page.url
+        await self._hover(point)
         await self.watch()
         await self.s.page.mouse.click(point[0], point[1])
         clicked = await self.effect(url)
@@ -241,7 +252,9 @@ class Prober:
         """APG diyalog deseni: odak içeri, Tab içeride, Escape kapatır, odak geri döner."""
         s, cfg = self.s, self.cfg
         d_id: int = dialog["id"]
-        heuristic: bool = dialog["heuristic"]
+        # Modal olmayan dialog (aria-modal yok, show() ile açılmış) APG modal desenine
+        # uymak zorunda değildir: bulguları elle incelenir.
+        heuristic: bool = dialog["heuristic"] or not dialog.get("modal", False)
         info = (await s.describe([d_id])).get(d_id)
         if info is None or info.selector in self.tested_dialogs:
             return
@@ -269,7 +282,9 @@ class Prober:
 
         # 2. Tab pencere içinde dönüyor mu? İlk öğe programla odaklanır.
         inside = await s.page.evaluate(js.DIALOG_TABBABLES, d_id)
-        if inside and await s.focus(inside[0]):
+        # Modal olmayan (anlamsal) dialogdan Tab ile çıkmak serbesttir.
+        contain = dialog.get("modal", False) or dialog["heuristic"]
+        if contain and inside and await s.focus(inside[0]):
             tab_steps = [*steps, await s.key_step(len(steps) + 1, "focus()")]
             for _ in range(len(inside) + 2):
                 state = await s.press("Tab")
@@ -369,6 +384,7 @@ class Prober:
         self.s.count("click")
         shot = await self.s.evidence_shot()
         url = self.s.page.url
+        await self._hover(point)
         await self.watch()
         await self.s.page.mouse.click(point[0], point[1])
         outcome = await self.effect(url)

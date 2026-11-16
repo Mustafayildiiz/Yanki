@@ -1,0 +1,47 @@
+# Gerçek modellerle alt metin testleri ve ölçümü (ALT-03..06, NFR-01, NFR-03).
+#
+# Her gece ve elle tetiklenerek çalışır; PR ve push CI'ını (ci.yml) yavaşlatmaz.
+# ci.yml model ağırlığı olmadan sahte arka uçla ve kural tabanlı yollarla test eder;
+# doğruluk yalnızca burada, gerçek modellerle ölçülür.
+#
+# Model ağırlıkları (~2,5 GB) actions/cache ile saklanır. Anahtar, sabit model
+# revizyonlarının bulunduğu yanki/config.py dosyasının karmasıdır.
+name: Modeller
+
+on:
+  schedule:
+    - cron: "30 2 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  models:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      RUN: >-
+        docker run --rm --init --shm-size=1g
+        --cap-drop=ALL --security-opt no-new-privileges:true
+        -v ${{ github.workspace }}/.models:/models
+        -e COVERAGE_FILE=/tmp/.coverage
+        yanki:ci
+    steps:
+      - uses: actions/checkout@v5
+      - name: Model önbelleği
+        uses: actions/cache@v4
+        with:
+          path: .models
+          key: models-${{ hashFiles('yanki/config.py') }}
+      - name: Önbellek dizini (konteyner kullanıcısı yazabilsin)
+        run: mkdir -p .models && chmod 777 .models
+      - name: İmajı oluştur
+        run: docker build -t yanki:ci .
+      - name: Modelleri indir (yalnızca ağırlıklar, NFR-07)
+        run: $RUN yanki models download
+      - name: Gerçek modelli testler
+        run: $RUN pytest -p no:cacheprovider -m models
+      - name: Set B/C ölçümü ve NFR-01 süresi
+        if: always()
+        run: $RUN python experiments/alt_eval.py --verbose

@@ -20,11 +20,23 @@ Hedef kitle profesyonellerdir. Bu yüzden her bulgu kanıt, güven skoru ve WCAG
 
 ## Mevcut durum
 
-- **Faz 1 (klavye modülü) tamamlandı; sıradaki Faz 2 (alt metin).** `yanki scan <hedef>` Playwright + axe-core ile tarar, ardından klavye testini (`yanki/core/keyboard/`) çalıştırır ve JSON rapor üretir.
-- Faz 0 test sayfaları `tests/pages/` altındadır. Set B `fixtures/known_issues/` (8 sayfa), Set C `fixtures/clean/` (4 sayfa) altındadır; her sayfanın yanında `*.expected.json` vardır. Eşleme anahtarı `(rule, evidence.check, selector)`. Ölçüm: `python experiments/keyboard_eval.py` (Faz 1 sonu: Set B duyarlılık 21/21 = 20 kesin + 1 "elle incele" (`skip_link_missing`); Set C kesin yanlış alarm 0, elle incele 0).
+- **Faz 2 (alt metin) tamamlandı; sıradaki Faz 3 (puanlama ve rapor).** NFR-03 ve §8.3 model seçimi Set A'yı bekliyor. `yanki scan <hedef>` Playwright + axe-core ile tarar, görsel baytlarını toplar, klavye testini (`yanki/core/keyboard/`) çalıştırır, tarayıcı kapandıktan sonra alt metin analizini (`yanki/core/alttext/`) yapar ve JSON rapor üretir.
+- Faz 0 test sayfaları `tests/pages/` altındadır. Set B `fixtures/known_issues/` (8 klavye + 7 alt metin sayfası), Set C `fixtures/clean/` (4 klavye + 2 alt metin sayfası) altındadır; her sayfanın yanında `*.expected.json` vardır. Üst düzey `expected` klavye içindir; alt metin beklentileri `alt_text` bölümündedir. Model gerektirenler `requires_models: true` ile işaretlidir; ek olarak `failed`, `decorative` ve `skipped` listeleri bulunur. Eşleme anahtarı `(rule, evidence.check, selector)`. Ölçüm: `python experiments/keyboard_eval.py` (Faz 1 sonu: Set B duyarlılık 21/21 = 20 kesin + 1 "elle incele" (`skip_link_missing`); Set C kesin yanlış alarm 0, elle incele 0).
+- **Alt metin modülü (Faz 2):**
+  - **Kullanıcı kararları:** PyTorch CPU + transformers. ML paketleri `ml` ekstrasındadır ve yalnızca Linux'a özel `requirements-ml.lock` ile kilitlenir. Docker imajı bunu kurar; native CI işleri torch kurmaz.
+  - **Testler:** Sahte arka uç (`backend = "fake"`) gerçek arka uçla aynı sözleşmeyi uygular ama doğruluk ölçmez. Gerçek modelli testler `pytest -m models` ile çalışır (varsayılan koşuda seçilmez) ve gece çalışan `.github/workflows/models.yml` işinde koşar. `tests/conftest.py`, `models` işareti olmayan testlerde `YANKI_MODELS_DIR`'i boş bir dizine yönlendirir; böylece yereldeki ağırlıklar varsayılan testleri etkilemez.
+  - **Ağırlıklar:** `yanki models download` ile sabit revizyonla indirilir. Tarama sırasında indirme yapılmaz; ağırlık yoksa kural tabanlı adımlar çalışır, model görselleri `failed/models_unavailable` olur.
+  - **Görsel baytları:** Yeni ağ isteği yapılmaz. Baytlar sayfanın kendi yanıtlarından (`ImageCapture`, gezinmeden önce bağlanır, klavye testinden önce ayrılır) ya da `data:` URI'den alınır; SVG ve koklanamayan biçimler için öğe ekran görüntüsü kullanılır. Yüklenemeyen `<img>` (`naturalWidth == 0`) için ekran görüntüsü alınmaz.
+  - **Kanıt:** Kural bulgularında öğe ekran görüntüsü, model bulgularında Pillow ile PNG'ye yeniden kodlanmış küçük resim kullanılır.
+  - **Ölçüm (Faz 2 sonu, `python experiments/alt_eval.py`, kalibre edilmemiş eşikler):**
+    - Set B alt metin duyarlılığı 20/24; model gerektirenlerde 5/9 (yetersiz 1/4, uyumsuz 4/5).
+    - Set C'de 1 kesin yanlış alarm: `#c-bridge`, çeviri hatası ("asma köprü" → "drawbridge").
+    - NFR-01: CPU'da görsel başına 1,58 sn (model yükleme hariç).
+    - Eşikler bu fixture'lara göre **ayarlanmadı**; kalibrasyon Set A ile yapılacak. `pytest -m models` bu 3 sapma yüzünden kırmızıdır; bu bilerek gizlenmedi.
+  - **Bilinen sınırlar (Faz 2):** Tek kelimelik genel alt metinler ("Hayvanlar", "Bina") E5'te yüksek benzerlik alır ve "uygun" çıkar. Çeviri hataları bulgu üretebilir. CSS arka plan görselleri analiz edilmez. ALT-12 dil tespiti yalnızca TR/EN durak sözcüğü sezgiselidir. Önbellek `.yanki/cache` (ya da `YANKI_CACHE_DIR`) altındadır.
   - **Ölçümün sınırı:** Set B/C fixture'ları dedektörlerden *sonra* yazıldı; 21/21 bir üst sınırdır. Gerçek sitelerde (Set D) daha düşük çıkması beklenir. Faz 1 sonunda bulunan yanlış alarm kaynakları (tarih/saat alanı ve medya kontrolünde sahte tuzak, slider'da Enter/Boşluk sondası, modal olmayan dialogda modal kuralı, hover'ın tıklama etkisi sayılması) düzeltildi ve `widgets_ok.html`'e eklendi.
 - **Faz 2 ve sonrası için ders:** fixture'lar ve `*.expected.json` dedektörden *önce* yazılır. Temiz set (Set C, Set A'nın "uygun" sınıfı) yanlış alarm üretmesi en olası örnekleri bilerek içerir; aksi hâlde "0 yanlış alarm" bir şey kanıtlamaz.
-- **Faz 2'ye başlamadan sorulacaklar:** Set A (150–200 etiketli görsel, iki bağımsız etiketleyici, Cohen kappa) hazır mı, nerede? `opus-mt-tc-big-tr-en` lisansı aday olarak denenmeden önce kontrol edilmeli (açık soru 3).
+- **Set A durumu:** Set A henüz hazır değil (kullanıcı, 2026-11-16). Biçimi `fixtures/alt_text_labeled/README.md` içindedir. Hazır olunca `python experiments/alt_eval.py --skip-bc --grid` ile §8.3 karşılaştırması ve NFR-03 ölçümü yapılır.
 - **Klavye modülü** taramada en son çalışır (sayfayı değiştirir). Sayfa yalnızca durum kirlendiyse `scan._navigate` ile, yani aynı proxy denetiminden geçerek yeniden yüklenir. Hatalar taramayı durdurmaz; uyarı + kısmi `keyboard` raporu olur (NFR-16).
   - **Etkinleştirme politikası temkinlidir (kullanıcı kararı):** form içindeki kontroller, submit/reset düğmeleri ve gerçek `href` bağlantılar asla etkinleştirilmez; sonda sınırı `max_probes`.
   - **Kanıt (KLV-10):** her klavye bulgusunda `evidence.steps` ve `evidence.screenshot` vardır. PNG'ler `ScanReport.artifacts` içinde tutulur (JSON'a girmez), içerik karmasıyla adlandırılır (`evidence/<sha16>.png`); CLI `-o` raporunun yanına yazar, stdout'ta uyarı verir.
@@ -155,8 +167,8 @@ Bir hedef tutmazsa gizleme; sapmayı ve olası nedenini raporla.
 Proje **Docker içinde** çalıştırılır ve test edilir. Python, Playwright ve modelleri ana makineye (Windows) kurma. Testleri, taramaları ve betikleri konteynerde çalıştır.
 
 - **Taban imaj:** `mcr.microsoft.com/playwright/python:v1.65.2-noble`. İmajda tarayıcılar (`/ms-playwright`) ve sistem bağımlılıkları hazırdır, ama Python `playwright` paketi **yoktur**; Faz 0'da kilit dosyasıyla `/opt/venv` içine kurulur. Faz 0'da `pyproject.toml` / kilit dosyasındaki `playwright` sürümü imaj etiketiyle **aynı** sabitlenmeli (`1.65.2`). Biri yükseltilirse diğeri de yükseltilir.
-- **Python ortamı:** `/opt/venv` içindedir. `requirements.lock` dosyasından (hash'li) kurulur, ardından paket `pip install --no-deps -e .` ile kurulur.
-- **Kilit aracı: uv** (`uv pip compile --universal --generate-hashes --extra dev`). Kilit dosyası `scripts/lock.sh` ile konteynerde üretilir. Bağımlılık eklerken `pyproject.toml`'u güncelle, kilidi yeniden üret, `docs/THIRD_PARTY_LICENSES.md`'ye lisansı ekle (testle zorunlu), sonra `docker compose build`.
+- **Python ortamı:** `/opt/venv` içindedir. `requirements-ml.lock` dosyasından (hash'li; temel + dev + ml, yalnızca Linux, torch CPU indeksinden) kurulur, ardından paket `pip install --no-deps -e .` ile kurulur. Torch'suz `requirements.lock` native CI işleri (Windows, Linux, macOS) içindir.
+- **Kilit aracı: uv** (`uv pip compile --universal --generate-hashes --extra dev [--extra ml]`). İki kilit `scripts/lock.sh` ile konteynerde üretilir; ml kilidinin platform kısıtı pyproject'in geçici kopyasına eklenir (temel kilidi daraltmasın diye). Bağımlılık eklerken `pyproject.toml`'u güncelle, kilidi yeniden üret, `docs/THIRD_PARTY_LICENSES.md`'ye lisansı ekle (testle zorunlu), sonra `docker compose build`.
 - **axe-core** `yanki/core/vendor/axe.min.js` olarak gömülüdür (4.14.0, MPL-2.0). Yükseltirken npm `dist.integrity` ile doğrula, `yanki/core/rules.py` içindeki `AXE_VERSION`/`AXE_SHA256` ve lisans listesini güncelle.
 - **Kaynak kod:** `/app` dizinine bind mount ile bağlanır. Bağımlılık değişikliğinden sonra `docker compose build` gerekir.
 - **Modeller:** `HF_HOME=/models` (`yanki-models` volume'ü).
@@ -175,7 +187,11 @@ docker compose run --rm yanki pytest --cov             # testler + kapsam raporu
 docker compose run --rm yanki ruff check .             # lint
 docker compose run --rm yanki ruff format .            # biçimlendirme
 docker compose run --rm yanki yanki scan <url|dosya> -o reports/sonuc.json
-docker compose run --rm yanki bash scripts/lock.sh     # kilit dosyasını yeniden üret
+docker compose run --rm yanki yanki models download    # alt metin modellerini indir (/models)
+docker compose run --rm yanki pytest -m models         # gerçek modelli testler
+docker compose run --rm yanki python experiments/alt_eval.py      # alt metin ölçümü
+docker compose run --rm yanki python experiments/keyboard_eval.py # klavye ölçümü
+docker compose run --rm yanki bash scripts/lock.sh     # iki kilit dosyasını yeniden üret
 ```
 
 Windows'ta Git Bash, `/app` gibi konteyner yollarını dönüştürür. Bu yüzden `-v` ve `-w` gibi argümanlarda `MSYS_NO_PATHCONV=1` ayarla ya da PowerShell kullan.
@@ -190,10 +206,14 @@ Windows'ta Git Bash, `/app` gibi konteyner yollarını dönüştürür. Bu yüzd
 
 1. SRS §6.4'teki şema örneğinde `evidence.alt_translated` yok. Oysa ALT-04 özgün ve çevrilmiş metnin birlikte saklanmasını istiyor ve agent talimatındaki şema bu alanı içeriyor. Şimdilik alan şemaya dahil edildi; SRS'in güncellenmesi gerekebilir.
 2. CLI-04'ün (`--device cpu|cuda`) önceliği kaynak SRS'te belirtilmemiş.
-3. `opus-mt-tc-big-tr-en` modelinin lisansı kullanılmadan önce kontrol edilmeli.
+3. ~~`opus-mt-tc-big-tr-en` lisansı~~ Kontrol edildi: CC-BY-4.0, atıf şartıyla aday olabilir (`docs/THIRD_PARTY_LICENSES.md`). Ancak model kartlarının kısıtları danışmanla değerlendirilmeli: OpenAI CLIP kartı "deployed use out of scope" der, BLIP kartı "research purposes only" der.
 4. Proje lisansı henüz belirlenmedi.
 5. axe `incomplete` sonuçları "elle incele" bulguları olarak (`needs_review`) raporlansın mı? Şimdilik yalnızca sayıları yazılıyor.
 6. Hız sınırı ve robots.txt (README'de "planlanıyor") hangi fazda uygulanacak?
 7. SRS'teki `rule` alanı kural bulgularında axe kimliği mi, gereksinim numarası mı olmalı? Şimdilik axe kimliği.
 8. KLV-08 "Escape kapatmıyor" bulgusu APG desenine dayanır; WCAG'de doğrudan karşılığı yoktur. Şimdilik 2.1.1 ile eşlendi.
 9. Klavye ciddiyet ve güven başlangıç değerleri (`KeyboardConfig.severity` / `confidence`; tuzak, odaklanamaz ve etkinleşmez öğe `critical`) danışmanla kalibre edilmeli. KLV-04 sapmasının seçicisi sıçramanın *vardığı* öğedir (pozitif tabindex'te suçlu olan önceki öğe `evidence.previous`'tadır).
+10. Alt metin sınıfları SRS'te tanımlı değil. "Yetersiz" (ilgili ama genel) ile "uyumsuz" (ilgisiz) için `fixtures/alt_text_labeled/README.md` içindeki tanımlar varsayılmıştır; Set A etiketleme kılavuzuyla aynı olmalı.
+11. ALT-01 "eksik" bulgusu ile axe `image-alt` / `input-image-alt` aynı görseli işaretler. Faz 3 puanlamasında çift sayım kararı gerekir.
+12. Alt metin ciddiyetleri (`AltTextConfig.severity`: eksik `critical`, genel ifade ve uyumsuz `important`, yetersiz `moderate`, ALT-11 ve ALT-12 `low`) ile eşik, ağırlık ve aralıklar kalibre edilmemiş başlangıç değerleridir.
+13. Tek kelimelik genel alt metinleri "yetersiz" saymak için model dışı bir sinyal (ör. sözcük sayısı ile açıklamanın ayrıntısı) Set A'da denenebilir. Fixture'lara göre ayarlamamak için şimdilik eklenmedi.

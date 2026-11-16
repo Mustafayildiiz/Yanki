@@ -1,0 +1,11 @@
+{
+  "page": "rules_violations.html",
+  "description": "Faz 0 axe entegrasyon testi. Bulgular tam olarak bu küme olmalıdır (fazlası da eksiği de hata).",
+  "expected": [
+    {"type": "rule", "rule": "button-name", "selector": "#icon-btn", "wcag": ["4.1.2"], "severity": "critical"},
+    {"type": "rule", "rule": "html-has-lang", "selector": "html", "wcag": ["3.1.1"], "severity": "important"},
+    {"type": "rule", "rule": "image-alt", "selector": "#hero", "wcag": ["1.1.1"], "severity": "critical"},
+    {"type": "rule", "rule": "label", "selector": "#email", "wcag": ["4.1.2"], "severity": "critical"},
+    {"type": "rule", "rule": "link-name", "selector": "#empty-link", "wcag": ["2.4.4", "4.1.2"], "severity": "important"}
+  ]
+}

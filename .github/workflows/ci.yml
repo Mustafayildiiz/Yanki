@@ -1,0 +1,58 @@
+# Yankı CI (NFR-11, NFR-15).
+#
+# docker: birincil ortam. İmaj kilit dosyasından kurulur; lint ve tüm testler
+#         konteynerde, bind mount OLMADAN çalışır (kaynak imaja kopyalanır).
+#         Konteyner yerel geliştirmedeki gibi yetkisiz çalışır.
+# native: Windows, Linux ve macOS'ta aynı kilit dosyasıyla kurulum ve testler
+#         (NFR-11 taşınabilirlik kanıtı).
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  docker:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v5
+      - name: İmajı oluştur
+        run: docker build -t yanki:ci .
+      - name: Lint ve testler (konteynerde)
+        run: >
+          docker run --rm --init --shm-size=1g
+          --cap-drop=ALL --security-opt no-new-privileges:true
+          -e COVERAGE_FILE=/tmp/.coverage
+          yanki:ci bash -c
+          "ruff check . && ruff format --check . &&
+          pytest -p no:cacheprovider --cov --cov-report=term"
+
+  native:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+      - name: Kilitli bağımlılıkları kur
+        run: |
+          python -m pip install -r requirements.lock
+          python -m pip install --no-deps -e .
+      - name: Chromium'u kur (Linux)
+        if: runner.os == 'Linux'
+        run: python -m playwright install --with-deps chromium
+      - name: Chromium'u kur (Windows, macOS)
+        if: runner.os != 'Linux'
+        run: python -m playwright install chromium
+      - name: Testler
+        run: python -m pytest -p no:cacheprovider

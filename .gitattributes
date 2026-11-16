@@ -6,3 +6,5 @@
 *.webp binary
 *.gif binary
 *.pdf binary
+# Gömülü axe-core: bayt bayt korunur (hash testi), diff'lerde gösterilmez.
+yanki/core/vendor/axe.min.js -text -diff linguist-vendored

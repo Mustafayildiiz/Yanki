@@ -2,8 +2,8 @@
 #
 #   docker compose build                      # imajı oluştur
 #   docker compose run --rm yanki             # konteynerde kabuk aç
-#   docker compose run --rm yanki pytest      # testleri çalıştır (Faz 0 sonrası)
-#   docker compose run --rm yanki yanki scan https://ornek.gov.tr   (Faz 0 sonrası)
+#   docker compose run --rm yanki pytest      # testleri çalıştır
+#   docker compose run --rm yanki yanki scan https://ornek.gov.tr -o reports/ornek.json
 #
 # Kaynak kod bind mount ile bağlanır; kodda yapılan değişiklik yeniden
 # build gerektirmez. Yalnızca bağımlılık değişince build gerekir.

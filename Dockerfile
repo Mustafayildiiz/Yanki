@@ -31,9 +31,9 @@ RUN apt-get update \
 WORKDIR /app
 USER pwuser
 
-# Bağımlılık katmanı. pyproject.toml ve kilit dosyası Faz 0'da eklenecek;
-# o zamana kadar bu adım hiçbir şey kurmaz. README.md yalnızca COPY joker
-# karakterlerinin boş eşleşmemesi için kopyalanır.
+# Bağımlılık katmanı: kilitli ve hash'li requirements.lock (NFR-15).
+# Kilit dosyası scripts/lock.sh (uv pip compile) ile üretilir.
+# README.md, pyproject.toml'daki `readme` alanı için kopyalanır.
 COPY --chown=pwuser:pwuser README.md pyproject.toml* requirements*.lock* ./
 RUN if [ -f requirements.lock ]; then pip install -r requirements.lock; fi
 

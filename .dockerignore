@@ -17,4 +17,3 @@ models
 *.db
 .env
 .claude
-docs

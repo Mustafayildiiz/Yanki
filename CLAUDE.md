@@ -20,7 +20,10 @@ Hedef kitle profesyonellerdir. Bu yüzden her bulgu kanıt, güven skoru ve WCAG
 
 ## Mevcut durum
 
-- **Aktif faz: Faz 0 (iskelet).** Docker ortamı (`Dockerfile`, `compose.yaml`) hazır; uygulama kodu henüz yok.
+- **Faz 0 (iskelet) tamamlandı; sıradaki Faz 1 (klavye modülü).** `yanki scan <hedef>` Playwright + axe-core ile tarar ve JSON rapor üretir.
+- Faz 0 test sayfaları `tests/pages/` altındadır. `fixtures/known_issues` ve `fixtures/clean` (Set B/C) Faz 1'de ölçüm için ayrıca yazılır; Faz 0 sayfalarını oraya taşıma.
+- **Ağ koruması (NFR-08):** Chromium'un tüm trafiği `yanki/core/netguard.py` içindeki süreç içi proxy'den geçer. Proxy her bağlantıda adı kendisi çözer ve doğruladığı IP'ye bağlanır. `page.route` yönlendirme adımlarını yakalamadığı için politika için kullanılmaz.
+- **Çekirdek async'tir** (`run_scan`). Klavye modülü aynı `Page` nesnesi üzerinde async çalışmalıdır.
 - Her fazın sonunda testler geçmelidir. Ardından kısa bir özet ver: ne yapıldı, hangi gereksinimler karşılandı, hangi sorular açık kaldı. Bir faz bitmeden sonrakine geçme.
 
 | Faz | Kapsam | Gereksinimler |
@@ -139,7 +142,9 @@ Bir hedef tutmazsa gizleme; sapmayı ve olası nedenini raporla.
 Proje **Docker içinde** çalıştırılır ve test edilir. Python, Playwright ve modelleri ana makineye (Windows) kurma. Testleri, taramaları ve betikleri konteynerde çalıştır.
 
 - **Taban imaj:** `mcr.microsoft.com/playwright/python:v1.65.2-noble`. İmajda tarayıcılar (`/ms-playwright`) ve sistem bağımlılıkları hazırdır, ama Python `playwright` paketi **yoktur**; Faz 0'da kilit dosyasıyla `/opt/venv` içine kurulur. Faz 0'da `pyproject.toml` / kilit dosyasındaki `playwright` sürümü imaj etiketiyle **aynı** sabitlenmeli (`1.65.2`). Biri yükseltilirse diğeri de yükseltilir.
-- **Python ortamı:** `/opt/venv` içindedir. `requirements.lock` varsa ondan kurulur, ardından paket `pip install --no-deps -e .` ile kurulur. Kilit aracı (uv veya pip-tools) Faz 0'da seçilecek; seçilen araç kilit dosyasını `requirements.lock` olarak dışa aktarmalı ya da Dockerfile buna göre güncellenmeli.
+- **Python ortamı:** `/opt/venv` içindedir. `requirements.lock` dosyasından (hash'li) kurulur, ardından paket `pip install --no-deps -e .` ile kurulur.
+- **Kilit aracı: uv** (`uv pip compile --universal --generate-hashes --extra dev`). Kilit dosyası `scripts/lock.sh` ile konteynerde üretilir. Bağımlılık eklerken `pyproject.toml`'u güncelle, kilidi yeniden üret, `docs/THIRD_PARTY_LICENSES.md`'ye lisansı ekle (testle zorunlu), sonra `docker compose build`.
+- **axe-core** `yanki/core/vendor/axe.min.js` olarak gömülüdür (4.14.0, MPL-2.0). Yükseltirken npm `dist.integrity` ile doğrula, `yanki/core/rules.py` içindeki `AXE_VERSION`/`AXE_SHA256` ve lisans listesini güncelle.
 - **Kaynak kod:** `/app` dizinine bind mount ile bağlanır. Bağımlılık değişikliğinden sonra `docker compose build` gerekir.
 - **Modeller:** `HF_HOME=/models` (`yanki-models` volume'ü).
 - **Kullanıcı ve yetkiler:** Konteyner root olmayan `pwuser` ile, `cap_drop: ALL` ve `no-new-privileges` altında çalışır. Bu ayarları gevşetme. Gerekiyorsa önce sor.
@@ -152,11 +157,15 @@ Proje **Docker içinde** çalıştırılır ve test edilir. Python, Playwright v
 ```bash
 docker compose build                                   # imajı oluştur / bağımlılık değişince yeniden oluştur
 docker compose run --rm yanki                          # konteynerde kabuk
-docker compose run --rm yanki pytest                   # testler (Faz 0 sonrası)
-docker compose run --rm yanki yanki scan <url>         # tarama (Faz 0 sonrası)
+docker compose run --rm yanki pytest                   # testler
+docker compose run --rm yanki pytest --cov             # testler + kapsam raporu
+docker compose run --rm yanki ruff check .             # lint
+docker compose run --rm yanki ruff format .            # biçimlendirme
+docker compose run --rm yanki yanki scan <url|dosya> -o reports/sonuc.json
+docker compose run --rm yanki bash scripts/lock.sh     # kilit dosyasını yeniden üret
 ```
 
-Lint ve kapsam komutları Faz 0'da eklenecek.
+Windows'ta Git Bash, `/app` gibi konteyner yollarını dönüştürür. Bu yüzden `-v` ve `-w` gibi argümanlarda `MSYS_NO_PATHCONV=1` ayarla ya da PowerShell kullan.
 
 ## Ortam
 

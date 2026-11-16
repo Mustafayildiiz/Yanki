@@ -39,7 +39,7 @@ jobs:
       - name: İmajı oluştur
         run: docker build -t yanki:ci .
       - name: Modelleri indir (yalnızca ağırlıklar, NFR-07)
-        run: $RUN yanki models download
+        run: $RUN yanki models download --all
       - name: Gerçek modelli testler
         run: $RUN pytest -p no:cacheprovider -m models
       - name: Set B/C ölçümü ve NFR-01 süresi

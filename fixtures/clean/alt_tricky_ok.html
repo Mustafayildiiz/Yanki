@@ -8,7 +8,8 @@
      #t-arialabel / #t-labelledby: alt yerine aria-label / aria-labelledby.
      #t-figure: figcaption ile birlikte. #t-en: lang="en" bölümünde İngilizce alt.
      #t-hidden: gizli, alt'sız görsel (görünmez; ALT-01 değil).
-     #t-icon: 16 px simge (model analizi için çok küçük). -->
+     #t-icon: 16 px simge (model analizi için çok küçük).
+     #t-svg: satır içi <svg role="img">, adı <title> çocuğundan gelir (ALT-01 değil). -->
 <html lang="tr">
 <head>
   <meta charset="utf-8">
@@ -50,6 +51,12 @@
       <h2>For visitors</h2>
       <img id="t-en" src="../images/cat_burmese.jpg" alt="A dark brown cat with green eyes">
     </section>
+    <h2>Hedef</h2>
+    <svg id="t-svg" role="img" width="160" height="100" viewBox="0 0 160 100">
+      <title>Yeşil bir dairenin yanında mavi bir kare</title>
+      <circle cx="45" cy="50" r="35" fill="#2f855a"/>
+      <rect x="95" y="15" width="60" height="70" fill="#2b6cb0"/>
+    </svg>
     <img id="t-hidden" src="../images/red_car.jpg" style="display: none">
     <p><img id="t-icon" class="icon" src="../images/warning.svg" alt="Uyarı"> Otopark yarın kapalı.
       <a href="#otopark">Otopark duyurusu</a></p>

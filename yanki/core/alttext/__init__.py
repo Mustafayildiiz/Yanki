@@ -199,7 +199,7 @@ async def collect_images(
         try:
             if plan.needs_bytes:
                 out.inputs[sel] = await gather(page, plan.el, capture, cfg)
-            elif plan.needs_shot:
+            elif plan.needs_shot and len(out.shots) < cfg.max_images:
                 png = await screenshot(page, sel, cfg)
                 if png:
                     out.shots[sel] = png
@@ -311,8 +311,11 @@ class _Analyzer:
             raise BackendUnavailable(self._backend_error or "arka uç yok")
         refs = backend.versions()
         alt = plan.alt or ""
+        # Anahtar, çıktıyı etkileyen her ayarı içerir (model revizyonu, üretim ayarları).
         caption, c1 = self._cached(
-            key("caption", refs.get("captioner", ""), image.sha256),
+            key(
+                "caption", refs.get("captioner", ""), str(self.cfg.caption_max_tokens), image.sha256
+            ),
             lambda: backend.caption([image])[0],
         )
         alt_en: str | None = None
@@ -320,7 +323,13 @@ class _Analyzer:
         if plan.translate_from:
             src = plan.translate_from
             alt_en, c2 = self._cached(
-                key("translate", refs.get("translator", ""), src, alt),
+                key(
+                    "translate",
+                    refs.get("translator", ""),
+                    str(self.cfg.translate_num_beams),
+                    src,
+                    alt,
+                ),
                 lambda: backend.translate([alt], src)[0],
             )
         multilingual = self.cfg.approach == "multilingual"
@@ -537,8 +546,10 @@ def _short_src(src: str | None) -> str | None:
     return src
 
 
-def download_models(config: YankiConfig) -> list[str]:
+def download_models(config: YankiConfig, *, all_approaches: bool = False) -> list[str]:
     """Yapılandırmadaki modelleri sabit revizyonlarıyla indirir (NFR-07: yalnızca ağırlık).
+
+    ``all_approaches``: hem ``translate`` hem ``multilingual`` yolunun modelleri.
 
     Raises:
         BackendUnavailable: ML paketleri kurulu değil.
@@ -549,9 +560,9 @@ def download_models(config: YankiConfig) -> list[str]:
         raise BackendUnavailable("ML paketleri kurulu değil (torch, transformers).") from exc
     models = config.alt_text.models
     refs = [models.captioner, models.embedder, models.clip]
-    if config.alt_text.approach == "translate":
+    if all_approaches or config.alt_text.approach == "translate":
         refs.insert(1, models.translator)
-    else:
+    if all_approaches or config.alt_text.approach == "multilingual":
         refs.append(models.clip_multilingual)
     done: list[str] = []
     for ref in refs:

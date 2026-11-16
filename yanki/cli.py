@@ -186,6 +186,10 @@ def models_download(
     config_path: Annotated[
         Path | None, typer.Option("--config", "-c", help="TOML yapılandırma dosyası.")
     ] = None,
+    all_approaches: Annotated[
+        bool,
+        typer.Option("--all", help="Hem çeviri hem çok dilli yolun modellerini indir (ALT-04)."),
+    ] = False,
 ) -> None:
     """Yapılandırmadaki modelleri sabit revizyonlarıyla indirir (NFR-07: yalnızca ağırlık).
 
@@ -196,7 +200,7 @@ def models_download(
     except (OSError, ValueError, ValidationError) as exc:
         raise _fail(ExitCode.USAGE, f"Yapılandırma okunamadı: {exc}") from exc
     try:
-        done = download_models(config)
+        done = download_models(config, all_approaches=all_approaches)
     except BackendUnavailable as exc:
         raise _fail(ExitCode.USAGE, str(exc)) from exc
     except Exception as exc:

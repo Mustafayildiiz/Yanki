@@ -173,9 +173,11 @@ def test_no_new_requests_and_blocked_images_fail(http_server: LocalServer, tmp_p
     report = _scan(http_server.url("/alt.html"), _fake(tmp_path), policy=make_policy())
     status = {r.selector: (r.status, r.reason) for r in report.alt_text.images}  # type: ignore[union-attr]
     assert status["#allowed"] == ("analyzed", None), status
+    assert status["#redirect-ok"] == ("analyzed", None), status  # yönlendirme izlenir
     assert status["#direct"][0] == "failed", status
     assert status["#redirected"][0] == "failed"
-    assert http_server.hits["/img/car.jpg"] == 1  # yalnızca sayfanın kendi yüklemesi
+    # yalnızca sayfanın kendi yüklemesi (doğrudan + yönlendirme sonrası)
+    assert http_server.hits["/img/car.jpg"] == 2
     assert not any(p.startswith("/evil") for p in http_server.hits)
     assert any(b.host == FORBIDDEN_IP for b in report.blocked_requests)
 

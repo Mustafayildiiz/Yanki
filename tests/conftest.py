@@ -154,6 +154,8 @@ def _make_handler(state: LocalServer) -> type[BaseHTTPRequestHandler]:
                         f" {size} alt='Gölde kano yapan iki kişi'>"
                         f"<img id='allowed' src='{ok}/img/car.jpg' {size}"
                         " alt='Arnavut kaldırımlı sokakta kırmızı bir araba'>"
+                        f"<img id='redirect-ok' src='{ok}/redirect?to={ok}/img/car.jpg%3Fv=2'"
+                        f" {size} alt='Yönlendirmeyle gelen kırmızı araba fotoğrafı'>"
                         "</main></html>"
                     ).encode(),
                 )

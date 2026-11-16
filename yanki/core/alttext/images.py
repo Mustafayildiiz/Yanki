@@ -81,13 +81,35 @@ class ImageCapture:
         page.on("response", self._on_response)
         page.on("requestfailed", self._on_failed)
 
+    @staticmethod
+    def _chain(request: Request) -> list[str]:
+        """İsteğin ve yönlendirmeyle geldiği önceki isteklerin adresleri.
+
+        ``<img src>`` yönlendirme öncesi adrestir; sonuç yanıtı o adresle de bulunmalıdır.
+        """
+        urls: list[str] = []
+        current: Request | None = request
+        while current is not None:
+            urls.append(current.url)
+            current = current.redirected_from
+        return urls
+
     def _on_response(self, response: Response) -> None:
-        if response.request.resource_type == "image":
-            self.responses[response.url] = response
+        request = response.request
+        if request.resource_type != "image":
+            return
+        if 300 <= response.status < 400:
+            # Ara yönlendirme yanıtı; zincirin sonu gelince üzerine yazılır.
+            self.responses.setdefault(response.url, response)
+            return
+        for url in self._chain(request):
+            self.responses[url] = response
 
     def _on_failed(self, request: Request) -> None:
         if request.resource_type == "image":
-            self.failures[request.url] = request.failure or "request_failed"
+            for url in self._chain(request):
+                self.failures[url] = request.failure or "request_failed"
+                self.responses.pop(url, None)
 
     def detach(self) -> None:
         self.page.remove_listener("response", self._on_response)
@@ -130,10 +152,12 @@ async def gather(
         data, source = decode_data_uri(src), "data_uri"
         if data is None:
             reason = "undecodable_data_uri"
+    elif src in capture.failures:
+        reason = f"request_failed: {capture.failures[src]}"
     elif src in capture.responses:
         response = capture.responses[src]
         length = response.headers.get("content-length", "")
-        if response.status >= 400:
+        if response.status >= 300:
             reason = f"http_{response.status}"
         elif length.isdigit() and int(length) > cfg.max_image_bytes:
             reason = "too_large"
@@ -142,8 +166,6 @@ async def gather(
                 data, source = await response.body(), "response"
             except PlaywrightError:
                 reason = "body_unavailable"
-    elif src in capture.failures:
-        reason = f"request_failed: {capture.failures[src]}"
 
     if data is not None and len(data) > cfg.max_image_bytes:
         return Gathered(reason="too_large")

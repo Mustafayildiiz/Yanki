@@ -89,7 +89,14 @@ _COLLECT_JS = r"""
       const label = norm(el.getAttribute('aria-label'));
       if (label) return label;
       const title = norm(el.getAttribute('title'));
-      return title || null;
+      if (title) return title;
+      // <svg role="img"><title>…</title></svg>: SVG'nin doğrudan <title> çocuğu adıdır.
+      if (el.namespaceURI === 'http://www.w3.org/2000/svg') {
+        const t = [...el.children].find(c => c.localName === 'title');
+        const text = t ? norm(t.textContent) : '';
+        if (text) return text;
+      }
+      return null;
     };
 
     const out = [];

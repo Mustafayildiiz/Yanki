@@ -105,6 +105,23 @@ def test_model_findings_carry_evidence_and_versions() -> None:
     assert alt is not None and alt.seconds_per_image is not None
 
 
+def test_multilingual_approach_runs_end_to_end() -> None:
+    """ALT-04: doğrudan çok dilli yol ayarla seçilir; çeviri yapılmaz, çok dilli CLIP kullanılır.
+
+    Doğruluk burada değil, Set A'da §8.3 protokolüyle karşılaştırılır.
+    """
+    cfg = YankiConfig.model_validate(
+        {"keyboard": {"enabled": False}, "alt_text": {"approach": "multilingual", "cache": False}}
+    )
+    report = asyncio.run(run_scan(str(FIXTURES / "known_issues/alt_mismatch.html"), cfg))
+    alt = report.alt_text
+    assert alt is not None and alt.approach == "multilingual"
+    analyzed = [r for r in alt.images if r.status == "analyzed"]
+    assert len(analyzed) == 5
+    assert all(r.alt_translated is None and r.clip is not None for r in analyzed)
+    assert "clip_multilingual" in report.tool.models and "translator" not in report.tool.models
+
+
 def test_real_models_are_deterministic() -> None:
     """NFR-06: aynı girdi, aynı açıklama ve skorlar (önbellek kapalı)."""
     cfg = YankiConfig.model_validate({"keyboard": {"enabled": False}, "alt_text": {"cache": False}})

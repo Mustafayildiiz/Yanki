@@ -1,0 +1,27 @@
+<!doctype html>
+<!-- Faz 0 kural testi sayfası (KUR-01, KUR-02). Bilinen axe ihlalleri
+     rules_violations.expected.json dosyasında listelenir. Bu sayfa Set B
+     (fixtures/known_issues) değildir; yalnızca axe entegrasyonunu doğrular. -->
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Kural ihlalleri test sayfası</title>
+</head>
+<body>
+  <main>
+    <h1>Ürün kataloğu</h1>
+    <section>
+      <h2>Öne çıkanlar</h2>
+      <p>Bu hafta indirimde olan ürün:
+        <img id="hero" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40'%3E%3Crect width='40' height='40' fill='%23345'/%3E%3C/svg%3E" width="40" height="40">
+      </p>
+      <button id="icon-btn" type="button" style="width:44px;height:44px"></button>
+      <a id="empty-link" href="#detay"></a>
+    </section>
+    <form>
+      <input id="email" type="text">
+      <button type="submit">Gönder</button>
+    </form>
+  </main>
+</body>
+</html>

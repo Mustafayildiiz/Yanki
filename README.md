@@ -5,7 +5,7 @@
 Yankı bir web sayfasını kendisi açar ve üç alanda denetler: WCAG 2.2 kuralları, görsel alt metinlerinin anlamı ve klavyeyle gezinme. Bulguların hepsi kanıta dayanır ve tek bir erişilebilirlik puanında toplanır.
 
 > [!NOTE]
-> **Durum: Faz 0 öncesi.** Depoda şu an belgeler ve Docker geliştirme ortamı var, henüz uygulama kodu yok. Aşağıdaki `yanki` komutları, API uç noktaları ve hedef metrikler **planlanan** tasarımı anlatır, çalışan bir sürümü değil. Gereksinimlerin tamamı [docs/SRS.md](docs/SRS.md) dosyasındadır.
+> **Durum: Faz 0 tamamlandı.** `yanki scan` komutu bir URL'yi ya da yerel HTML dosyasını Chromium'da açar ve axe-core ile WCAG 2.2 A/AA kurallarını denetler. Bulguları ve sayfadaki öğeleri JSON rapor olarak yazar. Alt metin analizi, klavye testi, puanlama, HTML/PDF rapor ve API henüz yoktur; bunlar **planlanan** tasarımdır. Gereksinimlerin tamamı [docs/SRS.md](docs/SRS.md) dosyasındadır.
 
 ---
 
@@ -205,8 +205,8 @@ docker compose run --rm yanki     # konteynerde kabuk aç
 
 İmaj neler içerir:
 
-- **Taban:** Playwright'ın resmi Python imajı (`mcr.microsoft.com/playwright/python:v1.65.2-noble`). Chromium ve sistem bağımlılıkları hazır gelir. Python `playwright` paketi ise Faz 0'da kilitli bağımlılıklarla kurulur.
-- **Python ortamı:** `/opt/venv`. Bağımlılıklar kilit dosyasından kurulur (Faz 0 ile eklenecek).
+- **Taban:** Playwright'ın resmi Python imajı (`mcr.microsoft.com/playwright/python:v1.65.2-noble`). Chromium ve sistem bağımlılıkları hazır gelir. Python `playwright` paketi aynı sürüme (1.65.2) kilitlidir.
+- **Python ortamı:** `/opt/venv`. Bağımlılıklar hash'li `requirements.lock` dosyasından kurulur (`scripts/lock.sh` ile uv kullanılarak üretilir).
 - **Model önbelleği:** `yanki-models` volume'ü (`/models`). Model ağırlıkları bir kez indirilir, sonraki çalıştırmalar çevrimdışıdır.
 - **Kaynak kod:** `/app` dizinine bind mount ile bağlanır. Kod değişince yeniden build gerekmez, yalnızca bağımlılık değişince gerekir.
 
@@ -218,7 +218,24 @@ Güvenlik ve donanım ayrıntıları:
 
 ## Planlanan kullanım
 
-> Bu bölüm hedeflenen arayüzü anlatır. `yanki` komutları henüz çalışmaz.
+> Faz 0'da çalışan komut `yanki scan` ve yalnızca `--format json` biçimidir. Diğer komutlar ve seçenekler hedeflenen arayüzü anlatır.
+
+Şu an çalışan tarama:
+
+```bash
+# Rapor standart çıktıya ya da -o ile dosyaya yazılır
+docker compose run --rm yanki yanki scan https://ornek.gov.tr -o reports/ornek.json
+
+# Yerel dosya; görünüm alanı, dil ve zaman aşımı ayarları
+docker compose run --rm yanki yanki scan tests/pages/clean.html --viewport 1280x800 --locale tr-TR --timeout 30
+
+# Ana makinedeki bir sunucu: yerel ağ izni açıkça verilmelidir (NFR-08)
+docker compose run --rm yanki yanki scan http://host.docker.internal:8000 --allow-private-network
+```
+
+Ayarların tamamı bir TOML dosyasıyla verilebilir (`--config yanki.toml`); alanlar [yanki/config.py](yanki/config.py) dosyasındadır.
+
+Planlanan komutlar:
 
 ### Komut satırı
 
@@ -259,7 +276,7 @@ Raporlar bind mount sayesinde proje klasörüne yazılır ve ana makineden doğr
 
 ## Depo yapısı
 
-Hedeflenen yapı (Faz 0 ile oluşturulacak):
+Hedeflenen yapı. Faz 0'da `core/{scan,rules,schema}.py`, `cli.py` ve `config.py` oluşturuldu; diğerleri ilgili fazda eklenir:
 
 ```text
 yanki/
@@ -291,8 +308,8 @@ compose.yaml         # geliştirme ortamı (mevcut)
 
 | Faz | Kapsam | Gereksinimler | Durum |
 | --- | --- | --- | --- |
-| 0 | İskelet: repo, `pyproject.toml`, CI, `yanki scan` ile axe-core → JSON (Docker ortamı hazır) | TAR-01..05, KUR-01..03, RAP-01 (JSON), NFR-08/11/15 | ⏳ Sıradaki |
-| 1 | Klavye modülü ve Set B/C test sayfaları | KLV-01..10, NFR-04/05 | Planlandı |
+| 0 | İskelet: repo, `pyproject.toml`, CI, `yanki scan` ile axe-core → JSON (Docker ortamı hazır) | TAR-01..05, KUR-01..03, RAP-01 (JSON), NFR-08/11/15 | ✅ Tamamlandı (NFR-11: Windows/macOS CI henüz koşmadı) |
+| 1 | Klavye modülü ve Set B/C test sayfaları | KLV-01..10, NFR-04/05 | ⏳ Sıradaki |
 | 2 | Alt metin analizi ve model karşılaştırma deneyi | ALT-01..12, NFR-01/03/12/13 | Planlandı |
 | 3 | Puanlama, HTML/PDF rapor, CI eşikleri | PUA-01..05, RAP-01..06, CLI-01..04 | Planlandı |
 | 4 | REST API, SQLite, Streamlit demo | API-01..05, UI-01, UI-03..06 | Planlandı |
@@ -328,11 +345,11 @@ Hedef donanım 8 çekirdekli CPU ve 16 GB RAM'dir. Bir hedef tutmazsa sapma ve o
 ## Gizlilik ve güvenlik
 
 - **Yerel çıkarım:** Taranan sayfanın içeriği ve görselleri hiçbir üçüncü taraf servise gönderilmez. Tüm modeller yerelde çalışır; internetten yalnızca model ağırlıkları indirilir.
-- **SSRF koruması:** Yalnızca `http` ve `https` kabul edilir. Yerel ağ ve `localhost` adresleri varsayılan olarak engellidir, ancak açık bir ayarla izin verilebilir.
+- **SSRF koruması:** Yalnızca `http` ve `https` (ve yerel dosya) kabul edilir. Yerel ağ ve `localhost` adresleri varsayılan olarak engellidir; `--allow-private-network` ile izin verilir. Tarayıcının tüm trafiği, adı kendisi çözüp doğruladığı IP'ye bağlanan bir denetim proxy'sinden geçer. Böylece yönlendirmeler, alt kaynaklar ve DNS rebinding de denetlenir.
 - **Yalıtım:** Tarayıcı yalıtılmış bir profilde çalışır. Taranan sayfanın kodu ana süreçte çalışmaz.
 - **Kaçışlama:** Raporlara giren sayfa kaynaklı metinler (alt metin, düğme adı vb.) her zaman kaçışlanır.
 - **Kendi erişilebilirliği:** Yankı'nın arayüzü ve HTML raporları WCAG 2.2 AA'ya uyar. Bu, Yankı'nın kendi kendini taramasıyla doğrulanır.
-- **Sorumlu tarama:** Hız sınırı uygulanır ve robots.txt'e saygı gösterilir. Yalnızca izinli siteleri ya da kendi sitelerinizi tarayın.
+- **Sorumlu tarama:** Yalnızca izinli siteleri ya da kendi sitelerinizi tarayın. Hız sınırı ve robots.txt desteği planlanıyor (SRS §9.1); Faz 0'da henüz uygulanmadı.
 
 ## Kapsam dışı
 
@@ -346,6 +363,7 @@ Hedef donanım 8 çekirdekli CPU ve 16 GB RAM'dir. Bir hedef tutmazsa sapma ve o
 
 - [Yazılım Gereksinim Belirtimi (SRS)](docs/SRS.md): tüm fonksiyonel ve fonksiyonel olmayan gereksinimler, puanlama modeli, doğrulama protokolü ve riskler.
 - [CLAUDE.md](CLAUDE.md): yapay zeka destekli geliştirme için çalışma kuralları.
+- [Üçüncü taraf lisansları](docs/THIRD_PARTY_LICENSES.md): kilitli bağımlılıklar ve gömülü axe-core (NFR-15).
 
 ## Lisans
 
